@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TradeLog</string>
+    <string name="briefing_channel_name">Morning Briefing</string>
+    <string name="briefing_channel_desc">Daily high-impact economic news summary</string>
+</resources>

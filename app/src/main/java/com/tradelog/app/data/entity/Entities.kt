@@ -1,0 +1,144 @@
+package com.tradelog.app.data.entity
+
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "accounts")
+data class Account(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val broker: String = "",
+    val balance: Double = 0.0,
+    val currency: String = "USD",
+    val isPropFirm: Boolean = false,
+    val createdAt: Long = 0L
+)
+
+@Entity(tableName = "trades")
+data class Trade(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val accountId: Long? = null,
+    val instrument: String,
+    val direction: Direction = Direction.LONG,
+    val entryPrice: Double = 0.0,
+    val exitPrice: Double? = null,
+    val lotSize: Double = 0.0,
+    val riskPercent: Double? = null,
+    val rMultiple: Double? = null,
+    val result: TradeResult = TradeResult.BREAKEVEN,
+    /** Realized money result, positive for profit, negative for loss. Used for net P&L. */
+    val pnl: Double = 0.0,
+    val setupTag: String? = null,
+    val notes: String = "",
+    /** content:// or file:// uri to a screenshot, if any. */
+    val screenshotUri: String? = null,
+    /** When the trade was taken (epoch millis). */
+    val openedAt: Long = 0L,
+    val createdAt: Long = 0L
+)
+
+@Entity(tableName = "journal_entries", indices = [Index(value = ["date"], unique = true)])
+data class JournalEntry(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** yyyy-MM-dd, one entry per day. */
+    val date: String,
+    val mindset: String = "",
+    val routine: String = "",
+    val reflection: String = "",
+    val mood: Int = 3,
+    val discipline: Int = 3,
+    val createdAt: Long = 0L
+)
+
+@Entity(tableName = "notes")
+data class NotebookNote(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val body: String = "",
+    /** comma-separated tags */
+    val tags: String = "",
+    val updatedAt: Long = 0L
+)
+
+@Entity(tableName = "setup_tags", indices = [Index(value = ["name"], unique = true)])
+data class SetupTag(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String
+)
+
+@Entity(tableName = "payouts")
+data class PayoutRecord(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** yyyy-MM-dd */
+    val date: String,
+    val accountName: String = "",
+    val amount: Double = 0.0,
+    val currency: String = "USD",
+    val status: PayoutStatus = PayoutStatus.PENDING,
+    val notes: String = "",
+    val createdAt: Long = 0L
+)
+
+@Entity(tableName = "economic_events")
+data class EconomicEvent(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    /** currency code, e.g. USD, EUR */
+    val country: String,
+    val impact: Impact = Impact.LOW,
+    /** event time, epoch millis (UTC) */
+    val dateTimeUtc: Long,
+    val forecast: String = "",
+    val previous: String = "",
+    val actual: String = ""
+)
+
+@Entity(tableName = "goals")
+data class Goal(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val type: GoalType = GoalType.DAILY,
+    val metric: GoalMetric = GoalMetric.MANUAL,
+    val target: Int = 1,
+    /** Manual increments for the current period. */
+    val manualProgress: Int = 0,
+    /** Period key the manualProgress belongs to (yyyy-MM-dd for daily, yyyy-'W'ww for weekly). */
+    val manualPeriodKey: String = "",
+    val unit: String = "",
+    val archived: Boolean = false,
+    val createdAt: Long = 0L
+)
+
+@Entity(tableName = "tasks")
+data class TaskItem(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val frequency: TaskFrequency = TaskFrequency.DAILY,
+    /** Last date this task was completed (yyyy-MM-dd). A DAILY task counts as done today iff this == today. */
+    val lastCompletedDate: String? = null,
+    /** For ONCE tasks only. */
+    val doneOnce: Boolean = false,
+    val sortOrder: Int = 0,
+    val createdAt: Long = 0L
+)
+
+@Entity(tableName = "task_completions", indices = [Index(value = ["date"])])
+data class TaskCompletion(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val taskId: Long,
+    /** yyyy-MM-dd */
+    val date: String
+)
+
+@Entity(tableName = "position_presets")
+data class PositionPreset(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val balance: Double = 0.0,
+    val riskPercent: Double = 1.0,
+    val stopLoss: Double = 10.0,
+    /** Money value of 1 pip/point per 1.0 lot for the instrument. */
+    val pipValuePerLot: Double = 10.0,
+    val instrument: String = ""
+)

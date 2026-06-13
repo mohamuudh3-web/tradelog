@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Bullish candle -->
+    <path android:fillColor="#2EC4B6" android:pathData="M44,46h8v22h-8z" />
+    <path android:strokeColor="#2EC4B6" android:strokeWidth="3" android:pathData="M48,38 L48,46 M48,68 L48,76" />
+    <!-- Bearish candle -->
+    <path android:fillColor="#E84855" android:pathData="M58,52h8v18h-8z" />
+    <path android:strokeColor="#E84855" android:strokeWidth="3" android:pathData="M62,44 L62,52 M62,70 L62,78" />
+</vector>

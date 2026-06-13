@@ -1,0 +1,78 @@
+package com.tradelog.app.ui.tools
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.tradelog.app.data.entity.PositionPreset
+import com.tradelog.app.repository.TradeLogRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+data class CalcForm(
+    val instrument: String = "EURUSD",
+    val balance: String = "",
+    val riskPct: String = "1",
+    val stopLoss: String = "",
+    val pipValuePerLot: String = "10"
+)
+
+data class CalcResult(val riskAmount: Double, val lotSize: Double, val valid: Boolean)
+
+class PositionCalcViewModel(private val repo: TradeLogRepository) : ViewModel() {
+
+    private val _form = MutableStateFlow(CalcForm())
+    val form: StateFlow<CalcForm> = _form.asStateFlow()
+
+    val presets: StateFlow<List<PositionPreset>> =
+        repo.presets.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun update(transform: (CalcForm) -> CalcForm) = _form.update(transform)
+
+    val result: CalcResult
+        get() {
+            val f = _form.value
+            val balance = f.balance.toDoubleOrNull()
+            val risk = f.riskPct.toDoubleOrNull()
+            val stop = f.stopLoss.toDoubleOrNull()
+            val pip = f.pipValuePerLot.toDoubleOrNull()
+            if (balance == null || risk == null || stop == null || pip == null || stop <= 0 || pip <= 0) {
+                return CalcResult(0.0, 0.0, false)
+            }
+            val riskAmount = balance * (risk / 100.0)
+            val lots = riskAmount / (stop * pip)
+            return CalcResult(riskAmount, lots, true)
+        }
+
+    fun applyPreset(p: PositionPreset) {
+        _form.value = CalcForm(
+            instrument = p.instrument,
+            balance = p.balance.toString(),
+            riskPct = p.riskPercent.toString(),
+            stopLoss = p.stopLoss.toString(),
+            pipValuePerLot = p.pipValuePerLot.toString()
+        )
+    }
+
+    fun savePreset(name: String) {
+        if (name.isBlank()) return
+        val f = _form.value
+        viewModelScope.launch {
+            repo.savePreset(
+                PositionPreset(
+                    name = name.trim(),
+                    balance = f.balance.toDoubleOrNull() ?: 0.0,
+                    riskPercent = f.riskPct.toDoubleOrNull() ?: 1.0,
+                    stopLoss = f.stopLoss.toDoubleOrNull() ?: 10.0,
+                    pipValuePerLot = f.pipValuePerLot.toDoubleOrNull() ?: 10.0,
+                    instrument = f.instrument.trim()
+                )
+            )
+        }
+    }
+
+    fun deletePreset(p: PositionPreset) = viewModelScope.launch { repo.deletePreset(p) }
+}
