@@ -85,8 +85,17 @@ fun PositionCalcScreen(onBack: () -> Unit) {
             }
             FormField(form.balance, { v -> vm.update { it.copy(balance = v) } }, "Account balance (or enter any amount)", keyboardType = KeyboardType.Number)
 
+            Text("Risk by", style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(form.riskMode == RiskMode.PERCENT, { vm.update { it.copy(riskMode = RiskMode.PERCENT) } }, { Text("Percent %") })
+                FilterChip(form.riskMode == RiskMode.AMOUNT, { vm.update { it.copy(riskMode = RiskMode.AMOUNT) } }, { Text("Amount $") })
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FormField(form.riskPct, { v -> vm.update { it.copy(riskPct = v) } }, "Risk %", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+                if (form.riskMode == RiskMode.PERCENT) {
+                    FormField(form.riskPct, { v -> vm.update { it.copy(riskPct = v) } }, "Risk %", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+                } else {
+                    FormField(form.riskMoney, { v -> vm.update { it.copy(riskMoney = v) } }, "Risk amount", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+                }
                 FormField(form.stopLoss, { v -> vm.update { it.copy(stopLoss = v) } }, "Stop (pips/pts)", Modifier.weight(1f), keyboardType = KeyboardType.Number)
             }
             FormField(form.pipValuePerLot, { v -> vm.update { it.copy(pipValuePerLot = v) } }, "Pip/point value per 1.0 lot", keyboardType = KeyboardType.Number)

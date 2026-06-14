@@ -15,10 +15,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class RiskMode { PERCENT, AMOUNT }
+
 data class CalcForm(
     val instrument: String = "EURUSD",
     val balance: String = "",
+    val riskMode: RiskMode = RiskMode.PERCENT,
     val riskPct: String = "1",
+    val riskMoney: String = "",
     val stopLoss: String = "",
     val pipValuePerLot: String = "10"
 )
@@ -54,14 +58,23 @@ class PositionCalcViewModel(private val repo: TradeLogRepository) : ViewModel() 
     }
 
     private fun compute(f: CalcForm): CalcResult {
-        val balance = f.balance.toDoubleOrNull()
-        val risk = f.riskPct.toDoubleOrNull()
         val stop = f.stopLoss.toDoubleOrNull()
         val pip = f.pipValuePerLot.toDoubleOrNull()
-        if (balance == null || risk == null || stop == null || pip == null || stop <= 0 || pip <= 0 || balance <= 0) {
-            return CalcResult(0.0, 0.0, false)
+        if (stop == null || pip == null || stop <= 0 || pip <= 0) return CalcResult(0.0, 0.0, false)
+
+        val riskAmount = when (f.riskMode) {
+            RiskMode.PERCENT -> {
+                val balance = f.balance.toDoubleOrNull()
+                val pct = f.riskPct.toDoubleOrNull()
+                if (balance == null || pct == null || balance <= 0 || pct <= 0) return CalcResult(0.0, 0.0, false)
+                balance * (pct / 100.0)
+            }
+            RiskMode.AMOUNT -> {
+                val amt = f.riskMoney.toDoubleOrNull()
+                if (amt == null || amt <= 0) return CalcResult(0.0, 0.0, false)
+                amt
+            }
         }
-        val riskAmount = balance * (risk / 100.0)
         val lots = riskAmount / (stop * pip)
         return CalcResult(riskAmount, lots, true)
     }
