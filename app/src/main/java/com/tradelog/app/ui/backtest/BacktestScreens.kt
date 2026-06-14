@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items as listItems
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -200,7 +201,7 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
             FormField(form.instrument, { v -> vm.update { it.copy(instrument = v) } }, "Symbol / pair")
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
-                    androidx.compose.foundation.lazy.items(instruments, key = { it.id }) { ins ->
+                    listItems(instruments, key = { it.id }) { ins ->
                         FilterChip(form.instrument.equals(ins.name, true), { vm.update { it.copy(instrument = ins.name) } }, { Text(ins.name) })
                     }
                 }
