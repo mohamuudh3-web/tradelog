@@ -43,9 +43,11 @@ class PositionCalcViewModel(private val repo: TradeLogRepository) : ViewModel() 
     val accounts: StateFlow<List<Account>> =
         repo.accounts.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    /** Reactive result — recomputes whenever the form changes. */
-    val result: StateFlow<CalcResult> =
-        _form.map { compute(it) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), compute(CalcForm()))
+    /** Result is computed on demand when Calculate is pressed. */
+    private val _result = MutableStateFlow(CalcResult(0.0, 0.0, false))
+    val result: StateFlow<CalcResult> = _result.asStateFlow()
+
+    fun calculate() { _result.value = compute(_form.value) }
 
     fun update(transform: (CalcForm) -> CalcForm) = _form.update(transform)
 
