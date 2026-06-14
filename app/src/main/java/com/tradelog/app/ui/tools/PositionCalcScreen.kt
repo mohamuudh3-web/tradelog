@@ -85,6 +85,7 @@ fun PositionCalcScreen(onBack: () -> Unit) {
             }
             FormField(form.pipValuePerLot, { v -> vm.update { it.copy(pipValuePerLot = v) } }, "Pip/point value per 1.0 lot", keyboardType = KeyboardType.Number)
 
+            Text("Result — calculates automatically", style = MaterialTheme.typography.labelLarge)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatTile("Risk amount", if (result.valid) Format.money(result.riskAmount) else "—", Modifier.weight(1f), accent = MaterialTheme.colorScheme.error)
                 StatTile("Lot size", if (result.valid) String.format("%.2f", result.lotSize) else "—", Modifier.weight(1f), accent = Teal)
@@ -97,7 +98,7 @@ fun PositionCalcScreen(onBack: () -> Unit) {
                 )
             }
 
-            OutlinedButton(onClick = { showSave = true }, modifier = Modifier.fillMaxWidth()) { Text("Save as preset") }
+            OutlinedButton(onClick = { showSave = true }, modifier = Modifier.fillMaxWidth()) { Text("Save these inputs as a preset (optional)") }
 
             if (presets.isNotEmpty()) {
                 SectionCard(title = "Presets") {

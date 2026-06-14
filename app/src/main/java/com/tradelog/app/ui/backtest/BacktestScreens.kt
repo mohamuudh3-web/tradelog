@@ -51,9 +51,20 @@ import com.tradelog.app.ui.common.DetailScaffold
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
 import com.tradelog.app.ui.common.Pill
+import com.tradelog.app.ui.theme.Loss
+import com.tradelog.app.ui.theme.Neutral
 import com.tradelog.app.ui.theme.Teal
+import com.tradelog.app.ui.theme.Win
 import com.tradelog.app.util.DateUtils
+import androidx.compose.material3.FilterChip
+import androidx.compose.ui.graphics.Color
 import java.io.File
+
+private fun backtestResultColor(result: String): Color = when (result.uppercase()) {
+    "WIN" -> Win
+    "LOSS" -> Loss
+    else -> Neutral
+}
 
 @Composable
 fun BacktestGalleryScreen(onAdd: () -> Unit, onOpen: (Long) -> Unit, onBack: () -> Unit) {
@@ -82,6 +93,7 @@ fun BacktestGalleryScreen(onAdd: () -> Unit, onOpen: (Long) -> Unit, onBack: () 
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.clickable { onOpen(item.backtest.id) }
                 ) {
+                    val bt = item.backtest
                     Column {
                         Box(
                             Modifier.fillMaxWidth().aspectRatio(1.3f)
@@ -99,20 +111,37 @@ fun BacktestGalleryScreen(onAdd: () -> Unit, onOpen: (Long) -> Unit, onBack: () 
                             } else {
                                 Icon(Icons.Filled.Image, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
+                            if (bt.result.isNotBlank()) {
+                                Box(Modifier.align(Alignment.TopStart).padding(8.dp)) {
+                                    Pill(bt.result, backtestResultColor(bt.result))
+                                }
+                            }
                         }
                         Column(Modifier.padding(10.dp)) {
-                            Text(item.backtest.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(bt.instrument.ifBlank { bt.title }, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                Text("#${bt.id}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if (bt.direction.isNotBlank() || bt.session.isNotBlank()) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
+                                    if (bt.direction.isNotBlank()) Pill(bt.direction, if (bt.direction.equals("Sell", true)) Loss else Teal)
+                                    if (bt.session.isNotBlank()) Pill(bt.session, MaterialTheme.colorScheme.primary)
+                                }
+                            }
                             Text(
-                                listOfNotNull(
-                                    item.backtest.instrument.ifBlank { null },
-                                    "${item.imageCount} shot${if (item.imageCount == 1) "" else "s"}"
-                                ).joinToString(" · "),
-                                style = MaterialTheme.typography.bodySmall,
+                                "${item.imageCount} shot${if (item.imageCount == 1) "" else "s"} · ${DateUtils.formatEpochDate(bt.dateMillis)}",
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis
+                                modifier = Modifier.padding(top = 4.dp)
                             )
-                            if (item.backtest.bias.isNotBlank()) {
-                                Text(item.backtest.bias, style = MaterialTheme.typography.labelSmall, color = Teal, maxLines = 1)
+                            if (bt.notes.isNotBlank()) {
+                                Text(
+                                    bt.notes,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2, overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
                             }
                         }
                     }
@@ -161,8 +190,29 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
                     }
                 }
             }
-            FormField(form.bias, { v -> vm.update { it.copy(bias = v) } }, "Bias / result (e.g. Bullish, A+ setup)")
-            FormField(form.notes, { v -> vm.update { it.copy(notes = v) } }, "Notes", singleLine = false, minLines = 4)
+            Text("Direction", style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Buy", "Sell").forEach { d ->
+                    FilterChip(
+                        selected = form.direction == d,
+                        onClick = { vm.update { it.copy(direction = if (it.direction == d) "" else d) } },
+                        label = { Text(d) }
+                    )
+                }
+            }
+            Text("Result", style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("WIN", "LOSS", "BE").forEach { r ->
+                    FilterChip(
+                        selected = form.result == r,
+                        onClick = { vm.update { it.copy(result = if (it.result == r) "" else r) } },
+                        label = { Text(r) }
+                    )
+                }
+            }
+            FormField(form.session, { v -> vm.update { it.copy(session = v) } }, "Session / strategy tag (e.g. S2, London)")
+            FormField(form.bias, { v -> vm.update { it.copy(bias = v) } }, "Bias note (e.g. Bullish, A+ setup)")
+            FormField(form.notes, { v -> vm.update { it.copy(notes = v) } }, "Notes — what you saw, why you'd take it", singleLine = false, minLines = 4)
 
             Text("Date: ${DateUtils.formatEpochDate(form.dateMillis)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 

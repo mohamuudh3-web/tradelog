@@ -2,6 +2,7 @@ package com.tradelog.app.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Goal
 import com.tradelog.app.data.entity.TaskCategory
 import com.tradelog.app.data.entity.TaskItem
@@ -10,7 +11,9 @@ import com.tradelog.app.data.entity.TradeResult
 import com.tradelog.app.repository.TradeLogRepository
 import com.tradelog.app.util.DateUtils
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -52,6 +55,17 @@ class DashboardViewModel(private val repo: TradeLogRepository) : ViewModel() {
             loading = false
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardState())
+
+    /** Next few upcoming economic events for the dashboard preview. */
+    val upcomingEvents: StateFlow<List<EconomicEvent>> = repo.events.map { events ->
+        val now = System.currentTimeMillis()
+        events.filter { it.dateTimeUtc >= now }.sortedBy { it.dateTimeUtc }.take(4)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    init {
+        // Populate the calendar cache so the dashboard preview isn't empty on first run.
+        viewModelScope.launch { if (!repo.hasCachedEvents()) repo.refreshCalendar() }
+    }
 
     fun toggleTask(task: TaskItem, done: Boolean) {
         viewModelScope.launch { repo.setTaskDone(task, done) }

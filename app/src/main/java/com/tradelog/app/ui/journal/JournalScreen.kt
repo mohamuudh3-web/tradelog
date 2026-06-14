@@ -31,6 +31,7 @@ import com.tradelog.app.di.appViewModel
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.Pill
 import com.tradelog.app.ui.common.SectionCard
+import com.tradelog.app.ui.common.SwipeToDelete
 import com.tradelog.app.ui.common.TopLevelScaffold
 import com.tradelog.app.ui.common.resultColor
 import com.tradelog.app.ui.theme.Amber
@@ -71,6 +72,7 @@ fun JournalScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(trades, key = { it.id }) { t ->
+                          SwipeToDelete(onDelete = { vm.deleteTrade(t) }) {
                             SectionCard(modifier = Modifier.clickable { onOpenTrade(t.id) }) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f)) {
@@ -91,6 +93,7 @@ fun JournalScreen(
                                     }
                                 }
                             }
+                          }
                         }
                     }
                 }
@@ -103,6 +106,7 @@ fun JournalScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(entries, key = { it.id }) { e ->
+                          SwipeToDelete(onDelete = { vm.deleteDaily(e) }) {
                             SectionCard(modifier = Modifier.clickable { onOpenDaily(e.date) }) {
                                 Text(e.date, style = MaterialTheme.typography.titleSmall)
                                 Text(
@@ -113,6 +117,7 @@ fun JournalScreen(
                                 )
                                 Text("Mood ${e.mood}/5 · Discipline ${e.discipline}/5", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
+                          }
                         }
                     }
                 }

@@ -51,7 +51,7 @@ import com.tradelog.app.data.entity.Trade
         Backtest::class,
         BacktestImage::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -96,13 +96,22 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v2 -> v3: backtest direction/result/session columns. */
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE backtests ADD COLUMN direction TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE backtests ADD COLUMN result TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE backtests ADD COLUMN session TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "tradelog.db"
-                ).addMigrations(MIGRATION_1_2)
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .fallbackToDestructiveMigration()
                     .build().also { INSTANCE = it }
             }

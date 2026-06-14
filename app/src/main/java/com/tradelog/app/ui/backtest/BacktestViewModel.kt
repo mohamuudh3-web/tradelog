@@ -38,6 +38,9 @@ class BacktestListViewModel(repo: TradeLogRepository) : ViewModel() {
 data class BacktestForm(
     val title: String = "",
     val instrument: String = "",
+    val direction: String = "",
+    val result: String = "",
+    val session: String = "",
     val bias: String = "",
     val notes: String = "",
     val dateMillis: Long = System.currentTimeMillis()
@@ -66,7 +69,11 @@ class BacktestEditViewModel(private val repo: TradeLogRepository) : ViewModel() 
         if (id == 0L) return
         viewModelScope.launch {
             repo.getBacktest(id)?.let { b ->
-                _form.value = BacktestForm(b.title, b.instrument, b.bias, b.notes, b.dateMillis)
+                _form.value = BacktestForm(
+                    title = b.title, instrument = b.instrument, direction = b.direction,
+                    result = b.result, session = b.session, bias = b.bias,
+                    notes = b.notes, dateMillis = b.dateMillis
+                )
             }
         }
     }
@@ -82,6 +89,9 @@ class BacktestEditViewModel(private val repo: TradeLogRepository) : ViewModel() 
                 instrument = f.instrument.trim(),
                 dateMillis = f.dateMillis,
                 bias = f.bias.trim(),
+                direction = f.direction,
+                result = f.result,
+                session = f.session.trim(),
                 notes = f.notes.trim()
             )
         )

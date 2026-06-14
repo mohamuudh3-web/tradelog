@@ -34,6 +34,7 @@ import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
 import com.tradelog.app.ui.common.Pill
 import com.tradelog.app.ui.common.SectionCard
+import com.tradelog.app.ui.common.SwipeToDelete
 import com.tradelog.app.ui.theme.Loss
 import com.tradelog.app.ui.theme.Teal
 import com.tradelog.app.ui.theme.Win
@@ -63,18 +64,20 @@ fun PortfolioScreen(onAdd: () -> Unit, onEdit: (Long) -> Unit, onBack: () -> Uni
         ) {
             items(accounts, key = { it.id }) { acc ->
                 val accPnl = pnl[acc.id] ?: 0.0
-                SectionCard(modifier = Modifier.clickable { onEdit(acc.id) }) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(acc.name, style = MaterialTheme.typography.titleMedium)
-                                if (acc.isPropFirm) Pill("PROP", Teal)
+                SwipeToDelete(onDelete = { vm.delete(acc) }) {
+                    SectionCard(modifier = Modifier.clickable { onEdit(acc.id) }) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(acc.name, style = MaterialTheme.typography.titleMedium)
+                                    if (acc.isPropFirm) Pill("PROP", Teal)
+                                }
+                                Text(acc.broker, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Text(acc.broker, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(Format.money(acc.balance, acc.currency), style = MaterialTheme.typography.titleSmall)
-                            Text(Format.signedMoney(accPnl, acc.currency), style = MaterialTheme.typography.bodySmall, color = if (accPnl >= 0) Win else Loss)
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(Format.money(acc.balance, acc.currency), style = MaterialTheme.typography.titleSmall)
+                                Text(Format.signedMoney(accPnl, acc.currency), style = MaterialTheme.typography.bodySmall, color = if (accPnl >= 0) Win else Loss)
+                            }
                         }
                     }
                 }
@@ -93,7 +96,7 @@ fun AccountEditScreen(accountId: Long, onBack: () -> Unit) {
         title = if (accountId == 0L) "New account" else "Edit account",
         onBack = onBack,
         actions = {
-            if (vm.canDelete) ConfirmDeleteAction("account") { vm.delete(onBack) }
+            if (accountId != 0L) ConfirmDeleteAction("account") { vm.delete(onBack) }
             IconButton(onClick = { vm.save(onBack) }) { Icon(Icons.Filled.Check, "Save") }
         }
     ) { inner ->

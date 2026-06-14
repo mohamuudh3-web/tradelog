@@ -8,28 +8,38 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tradelog.app.di.appViewModel
+import com.tradelog.app.ui.common.Pill
 import com.tradelog.app.ui.common.ProgressRow
 import com.tradelog.app.ui.common.SectionCard
 import com.tradelog.app.ui.common.StatTile
 import com.tradelog.app.ui.common.TopLevelScaffold
+import com.tradelog.app.ui.common.impactColor
 import com.tradelog.app.ui.common.resultColor
 import com.tradelog.app.ui.navigation.Routes
 import com.tradelog.app.ui.theme.Loss
@@ -45,9 +55,35 @@ fun DashboardScreen(
 ) {
     val vm: DashboardViewModel = appViewModel()
     val state by vm.state.collectAsStateWithLifecycle()
+    val events by vm.upcomingEvents.collectAsStateWithLifecycle()
+    var menuOpen by remember { mutableStateOf(false) }
+
+    val quickLinks = listOf(
+        "Analytics" to Routes.ANALYTICS,
+        "Goals & Tasks" to Routes.GOALS,
+        "Portfolio" to Routes.PORTFOLIO,
+        "Backtesting journal" to Routes.BACKTESTS,
+        "Notebook" to Routes.NOTEBOOK,
+        "Payouts" to Routes.PAYOUTS,
+        "Position calculator" to Routes.POSITION_CALC,
+        "Economic calendar" to Routes.CALENDAR,
+        "Pairs / instruments" to Routes.INSTRUMENTS,
+        "Settings" to Routes.SETTINGS
+    )
 
     TopLevelScaffold(
         title = "TradeLog",
+        actions = {
+            IconButton(onClick = { menuOpen = true }) { Icon(Icons.Filled.Menu, "Menu") }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                quickLinks.forEach { (label, route) ->
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = { menuOpen = false; onNavigate(route) }
+                    )
+                }
+            }
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddTrade,
@@ -140,24 +176,24 @@ fun DashboardScreen(
             }
 
             item {
-                SectionCard(title = "Quick access") {
-                    val links = listOf(
-                        "Analytics" to Routes.ANALYTICS,
-                        "Goals & Tasks" to Routes.GOALS,
-                        "Portfolio" to Routes.PORTFOLIO,
-                        "Notebook" to Routes.NOTEBOOK,
-                        "Payouts" to Routes.PAYOUTS,
-                        "Position calculator" to Routes.POSITION_CALC,
-                        "Economic calendar" to Routes.CALENDAR,
-                        "Settings" to Routes.SETTINGS
-                    )
-                    links.forEach { (label, route) ->
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onNavigate(route) }
-                        ) {
-                            Text(label, Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium)
+                SectionCard(title = "Economic calendar", modifier = Modifier.clickable { onNavigate(Routes.CALENDAR) }) {
+                    if (events.isEmpty()) {
+                        Text("No upcoming events cached. Tap to open the calendar.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                    } else {
+                        events.forEach { e ->
+                            Row(
+                                Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(color = impactColor(e.impact), shape = RoundedCornerShape(2.dp)) {
+                                    androidx.compose.foundation.layout.Box(Modifier.size(width = 4.dp, height = 34.dp))
+                                }
+                                Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                                    Text(e.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text("${e.country} · ${DateUtils.formatEpochDateTime(e.dateTimeUtc)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Pill(e.impact.name, impactColor(e.impact))
+                            }
                         }
                     }
                 }

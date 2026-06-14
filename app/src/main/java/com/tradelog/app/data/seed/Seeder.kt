@@ -1,6 +1,7 @@
 package com.tradelog.app.data.seed
 
 import com.tradelog.app.data.entity.Account
+import com.tradelog.app.data.entity.Backtest
 import com.tradelog.app.data.entity.Direction
 import com.tradelog.app.data.entity.Goal
 import com.tradelog.app.data.entity.GoalMetric
@@ -99,6 +100,7 @@ object Seeder {
         repo.savePreset(PositionPreset(name = "FTMO EURUSD 1%", balance = 100_000.0, riskPercent = 1.0, stopLoss = 15.0, pipValuePerLot = 10.0, instrument = "EURUSD"))
 
         seedV2(repo)
+        seedV3(repo)
     }
 
     /** Incremental seed for features added after v1 (saved pairs, morning routine). Idempotent-guarded by caller. */
@@ -129,5 +131,27 @@ object Seeder {
         ).forEachIndexed { i, t ->
             repo.saveTask(TaskItem(title = t, frequency = TaskFrequency.DAILY, category = TaskCategory.ROUTINE, sortOrder = i, createdAt = now))
         }
+    }
+
+    /** Example backtests so the gallery shows its layout on first run. */
+    suspend fun seedV3(repo: TradeLogRepository) {
+        val now = System.currentTimeMillis()
+        val day = 24 * 60 * 60 * 1000L
+        repo.saveBacktest(
+            Backtest(
+                title = "EURUSD London sweep", instrument = "EURUSD", direction = "Buy",
+                result = "WIN", session = "S2", bias = "Bullish",
+                notes = "Swept Asian low, displaced up, entered the 5m FVG. Clean 1:3 to the prior high.",
+                dateMillis = now - 2 * day
+            )
+        )
+        repo.saveBacktest(
+            Backtest(
+                title = "GBPUSD failed breakout", instrument = "GBPUSD", direction = "Sell",
+                result = "LOSS", session = "S3", bias = "Bearish",
+                notes = "Anticipated the breakout instead of waiting for the candle close. Lesson: wait for confirmation.",
+                dateMillis = now - 1 * day
+            )
+        )
     }
 }

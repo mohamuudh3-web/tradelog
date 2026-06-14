@@ -148,8 +148,14 @@ data class Backtest(
     val title: String,
     val instrument: String = "",
     val dateMillis: Long = 0L,
-    /** Free-form bias/result, e.g. "Bullish", "Win", "A+ setup". */
+    /** Free-form bias note, e.g. "Bullish", "A+ setup". */
     val bias: String = "",
+    /** "Buy" / "Sell" / "" */
+    @ColumnInfo(defaultValue = "") val direction: String = "",
+    /** "WIN" / "LOSS" / "BE" / "" */
+    @ColumnInfo(defaultValue = "") val result: String = "",
+    /** Session / strategy tag, e.g. "S2", "London". */
+    @ColumnInfo(defaultValue = "") val session: String = "",
     val notes: String = "",
     val createdAt: Long = 0L
 )

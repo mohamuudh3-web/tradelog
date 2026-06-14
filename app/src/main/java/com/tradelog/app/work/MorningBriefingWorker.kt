@@ -30,6 +30,9 @@ class MorningBriefingWorker(
         }
 
         NotificationHelper.showBriefing(applicationContext, title, body)
+
+        // Refresh upcoming high-impact alerts now that the calendar is updated.
+        NewsAlertScheduler.scheduleAll(applicationContext)
         return Result.success()
     }
 }

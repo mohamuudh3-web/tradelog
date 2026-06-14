@@ -142,9 +142,9 @@ fun resultColor(result: TradeResult): Color = when (result) {
 }
 
 fun impactColor(impact: Impact): Color = when (impact) {
-    Impact.HIGH -> Loss
-    Impact.MEDIUM -> Amber
-    Impact.LOW -> Neutral
+    Impact.HIGH -> Color(0xFFE84855)   // red
+    Impact.MEDIUM -> Color(0xFFFF8C2B) // orange
+    Impact.LOW -> Color(0xFFE3B341)    // yellow
 }
 
 val ScreenPadding = PaddingValues(16.dp)

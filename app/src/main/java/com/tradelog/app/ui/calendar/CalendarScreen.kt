@@ -1,15 +1,19 @@
 package com.tradelog.app.ui.calendar
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Surface
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +43,7 @@ fun CalendarScreen(onBack: () -> Unit) {
     val impact by vm.impactFilter.collectAsStateWithLifecycle()
     val currency by vm.currencyFilter.collectAsStateWithLifecycle()
     val currencies by vm.currencies.collectAsStateWithLifecycle()
+    val dayRange by vm.dayRange.collectAsStateWithLifecycle()
 
     DetailScaffold(
         title = "Economic calendar",
@@ -49,6 +54,12 @@ fun CalendarScreen(onBack: () -> Unit) {
         }
     ) { inner ->
         Column(Modifier.padding(inner)) {
+            // Day range filter
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(dayRange == DayRange.TODAY, { vm.setDayRange(DayRange.TODAY) }, { Text("Today") })
+                FilterChip(dayRange == DayRange.TOMORROW, { vm.setDayRange(DayRange.TOMORROW) }, { Text("Tomorrow") })
+                FilterChip(dayRange == DayRange.WEEK, { vm.setDayRange(DayRange.WEEK) }, { Text("This week") })
+            }
             // Impact filter
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(impact == null, { vm.setImpact(null) }, { Text("All") })
@@ -79,7 +90,10 @@ fun CalendarScreen(onBack: () -> Unit) {
                     items(events, key = { it.id }) { e ->
                         SectionCard {
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 12.dp)) {
+                                Surface(color = impactColor(e.impact), shape = RoundedCornerShape(2.dp)) {
+                                    Box(Modifier.size(width = 4.dp, height = 40.dp))
+                                }
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(start = 8.dp, end = 12.dp)) {
                                     Text(DateUtils.formatEpochTime(e.dateTimeUtc), style = MaterialTheme.typography.titleSmall)
                                     Text(e.country, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }

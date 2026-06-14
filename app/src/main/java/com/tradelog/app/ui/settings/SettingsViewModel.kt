@@ -7,6 +7,7 @@ import com.tradelog.app.data.AppSettings
 import com.tradelog.app.repository.TradeLogRepository
 import com.tradelog.app.work.BriefingScheduler
 import com.tradelog.app.work.MorningBriefingWorker
+import com.tradelog.app.work.NewsAlertScheduler
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,6 +38,13 @@ class SettingsViewModel(private val repo: TradeLogRepository) : ViewModel() {
 
     fun setCurrency(currency: String) {
         viewModelScope.launch { repo.settings.setDefaultCurrency(currency) }
+    }
+
+    fun setNewsAlert(context: Context, enabled: Boolean, minutes: Int) {
+        viewModelScope.launch {
+            repo.settings.setNewsAlert(enabled, minutes.coerceAtLeast(1))
+            NewsAlertScheduler.scheduleAll(context.applicationContext)
+        }
     }
 
     /** Fire the briefing right now so the user can preview it. */

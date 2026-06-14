@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Impact
 import com.tradelog.app.repository.TradeLogRepository
+import com.tradelog.app.util.DateUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +14,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+enum class DayRange { TODAY, TOMORROW, WEEK }
 
 data class CalendarUiState(
     val syncing: Boolean = false,
@@ -28,6 +31,9 @@ class CalendarViewModel(private val repo: TradeLogRepository) : ViewModel() {
     private val _currencyFilter = MutableStateFlow<String?>(null)
     val currencyFilter: StateFlow<String?> = _currencyFilter.asStateFlow()
 
+    private val _dayRange = MutableStateFlow(DayRange.WEEK)
+    val dayRange: StateFlow<DayRange> = _dayRange.asStateFlow()
+
     private val _ui = MutableStateFlow(CalendarUiState())
     val ui: StateFlow<CalendarUiState> = _ui.asStateFlow()
 
@@ -36,9 +42,18 @@ class CalendarViewModel(private val repo: TradeLogRepository) : ViewModel() {
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val events: StateFlow<List<EconomicEvent>> = combine(
-        repo.events, _impactFilter, _currencyFilter
-    ) { events, impact, currency ->
-        events.filter { (impact == null || it.impact == impact) && (currency == null || it.country == currency) }
+        repo.events, _impactFilter, _currencyFilter, _dayRange
+    ) { events, impact, currency, range ->
+        val (start, end) = when (range) {
+            DayRange.TODAY -> DateUtils.dayEpochBounds(DateUtils.today())
+            DayRange.TOMORROW -> DateUtils.dayEpochBounds(DateUtils.today().plusDays(1))
+            DayRange.WEEK -> Long.MIN_VALUE to Long.MAX_VALUE
+        }
+        events.filter {
+            (impact == null || it.impact == impact) &&
+                (currency == null || it.country == currency) &&
+                it.dateTimeUtc in start..end
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
@@ -53,6 +68,7 @@ class CalendarViewModel(private val repo: TradeLogRepository) : ViewModel() {
 
     fun setImpact(i: Impact?) { _impactFilter.value = i }
     fun setCurrency(c: String?) { _currencyFilter.value = c }
+    fun setDayRange(r: DayRange) { _dayRange.value = r }
 
     fun refresh() {
         if (_ui.value.syncing) return

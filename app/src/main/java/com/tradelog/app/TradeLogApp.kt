@@ -4,6 +4,7 @@ import android.app.Application
 import com.tradelog.app.data.seed.Seeder
 import com.tradelog.app.di.ServiceLocator
 import com.tradelog.app.work.BriefingScheduler
+import com.tradelog.app.work.NewsAlertScheduler
 import com.tradelog.app.work.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,13 +25,19 @@ class TradeLogApp : Application() {
 
         appScope.launch {
             if (!prefs.getBoolean("seeded", false)) {
-                // Fresh install: full seed already includes v2 data.
+                // Fresh install: full seed includes v2 + v3 data.
                 Seeder.seed(repo)
-                prefs.edit().putBoolean("seeded", true).putBoolean("seeded_v2", true).apply()
-            } else if (!prefs.getBoolean("seeded_v2", false)) {
-                // Upgrade from v1: add only the new v2 sample data.
-                Seeder.seedV2(repo)
-                prefs.edit().putBoolean("seeded_v2", true).apply()
+                prefs.edit().putBoolean("seeded", true).putBoolean("seeded_v2", true).putBoolean("seeded_v3", true).apply()
+            } else {
+                // Incremental seeds when upgrading from an older version.
+                if (!prefs.getBoolean("seeded_v2", false)) {
+                    Seeder.seedV2(repo)
+                    prefs.edit().putBoolean("seeded_v2", true).apply()
+                }
+                if (!prefs.getBoolean("seeded_v3", false)) {
+                    Seeder.seedV3(repo)
+                    prefs.edit().putBoolean("seeded_v3", true).apply()
+                }
             }
             val settings = repo.settings.settings.first()
             BriefingScheduler.reschedule(
@@ -39,6 +46,7 @@ class TradeLogApp : Application() {
                 settings.briefingHour,
                 settings.briefingMinute
             )
+            NewsAlertScheduler.scheduleAll(this@TradeLogApp)
         }
     }
 }

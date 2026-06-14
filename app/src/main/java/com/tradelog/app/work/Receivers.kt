@@ -27,7 +27,23 @@ class BriefingAlarmReceiver : BroadcastReceiver() {
     }
 }
 
-/** Re-arm the alarm after a reboot. */
+/** Fired before a high-impact economic event. */
+class NewsAlertReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent?) {
+        val title = intent?.getStringExtra(NewsAlertScheduler.EXTRA_TITLE) ?: return
+        val country = intent.getStringExtra(NewsAlertScheduler.EXTRA_COUNTRY) ?: ""
+        val minutes = intent.getIntExtra(NewsAlertScheduler.EXTRA_MINUTES, 30)
+        val index = intent.getIntExtra(NewsAlertScheduler.EXTRA_INDEX, 0)
+        NotificationHelper.showNewsAlert(
+            context,
+            title = "$country news in $minutes min",
+            body = title,
+            notifId = 2000 + index
+        )
+    }
+}
+
+/** Re-arm alarms after a reboot. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent?.action != Intent.ACTION_BOOT_COMPLETED) return
@@ -35,6 +51,7 @@ class BootReceiver : BroadcastReceiver() {
         runBlocking {
             val s = settings.settings.first()
             BriefingScheduler.reschedule(context, s.briefingEnabled, s.briefingHour, s.briefingMinute)
+            NewsAlertScheduler.scheduleAll(context)
         }
     }
 }

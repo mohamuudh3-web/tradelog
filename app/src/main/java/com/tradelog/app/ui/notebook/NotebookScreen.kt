@@ -32,6 +32,7 @@ import com.tradelog.app.ui.common.DetailScaffold
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
 import com.tradelog.app.ui.common.SectionCard
+import com.tradelog.app.ui.common.SwipeToDelete
 
 @Composable
 fun NotebookScreen(onAdd: () -> Unit, onOpen: (Long) -> Unit, onBack: () -> Unit) {
@@ -61,6 +62,7 @@ fun NotebookScreen(onAdd: () -> Unit, onOpen: (Long) -> Unit, onBack: () -> Unit
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(notes, key = { it.id }) { note ->
+                      SwipeToDelete(onDelete = { vm.delete(note) }) {
                         SectionCard(modifier = Modifier.clickable { onOpen(note.id) }) {
                             Text(note.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(note.body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -68,6 +70,7 @@ fun NotebookScreen(onAdd: () -> Unit, onOpen: (Long) -> Unit, onBack: () -> Unit
                                 Text(note.tags, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }
+                      }
                     }
                 }
             }
@@ -85,7 +88,7 @@ fun NoteEditScreen(noteId: Long, onBack: () -> Unit) {
         title = if (noteId == 0L) "New note" else "Edit note",
         onBack = onBack,
         actions = {
-            if (vm.canDelete) ConfirmDeleteAction("note") { vm.delete(onBack) }
+            if (noteId != 0L) ConfirmDeleteAction("note") { vm.delete(onBack) }
             IconButton(onClick = { vm.save(onBack) }) { Icon(Icons.Filled.Check, "Save") }
         }
     ) { inner ->

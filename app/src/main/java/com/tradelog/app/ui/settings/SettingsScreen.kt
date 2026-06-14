@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -65,6 +66,26 @@ fun SettingsScreen(onBack: () -> Unit) {
                 )
                 Button(onClick = { vm.sendTestBriefing(context) }, modifier = Modifier.padding(top = 8.dp)) {
                     Text("Send test briefing now")
+                }
+            }
+
+            SectionCard(title = "High-impact news alerts") {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Alert before high-impact news")
+                    Switch(
+                        checked = settings.newsAlertEnabled,
+                        onCheckedChange = { vm.setNewsAlert(context, it, settings.newsAlertMinutes) }
+                    )
+                }
+                Text("Notify me this many minutes before each event:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    listOf(5, 15, 30, 60).forEach { m ->
+                        FilterChip(
+                            selected = settings.newsAlertMinutes == m,
+                            onClick = { vm.setNewsAlert(context, settings.newsAlertEnabled, m) },
+                            label = { Text("$m min") }
+                        )
+                    }
                 }
             }
 

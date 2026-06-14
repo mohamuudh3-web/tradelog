@@ -30,6 +30,30 @@ object NotificationHelper {
         }
     }
 
+    fun showNewsAlert(context: Context, title: String, body: String, notifId: Int) {
+        ensureChannel(context)
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_OPEN_CALENDAR, true)
+        }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val pending = PendingIntent.getActivity(context, notifId, intent, flags)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(pending)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(notifId, notification)
+        } catch (e: SecurityException) {
+            // POST_NOTIFICATIONS not granted; ignore.
+        }
+    }
+
     fun showBriefing(context: Context, title: String, body: String) {
         ensureChannel(context)
 

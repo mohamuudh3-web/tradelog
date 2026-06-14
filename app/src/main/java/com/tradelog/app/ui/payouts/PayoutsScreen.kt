@@ -36,6 +36,7 @@ import com.tradelog.app.ui.common.FormField
 import com.tradelog.app.ui.common.Pill
 import com.tradelog.app.ui.common.SectionCard
 import com.tradelog.app.ui.common.StatTile
+import com.tradelog.app.ui.common.SwipeToDelete
 import com.tradelog.app.ui.theme.Amber
 import com.tradelog.app.ui.theme.Win
 import com.tradelog.app.util.Format
@@ -66,6 +67,7 @@ fun PayoutsScreen(onAdd: () -> Unit, onEdit: (Long) -> Unit, onBack: () -> Unit)
                 item { EmptyState("No payouts logged yet.") }
             } else {
                 items(payouts, key = { it.id }) { p ->
+                  SwipeToDelete(onDelete = { vm.delete(p) }) {
                     SectionCard(modifier = Modifier.clickable { onEdit(p.id) }) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
@@ -78,6 +80,7 @@ fun PayoutsScreen(onAdd: () -> Unit, onEdit: (Long) -> Unit, onBack: () -> Unit)
                             }
                         }
                     }
+                  }
                 }
             }
         }
@@ -94,7 +97,7 @@ fun PayoutEditScreen(payoutId: Long, onBack: () -> Unit) {
         title = if (payoutId == 0L) "New payout" else "Edit payout",
         onBack = onBack,
         actions = {
-            if (vm.canDelete) ConfirmDeleteAction("payout") { vm.delete(onBack) }
+            if (payoutId != 0L) ConfirmDeleteAction("payout") { vm.delete(onBack) }
             IconButton(onClick = { vm.save(onBack) }) { Icon(Icons.Filled.Check, "Save") }
         }
     ) { inner ->

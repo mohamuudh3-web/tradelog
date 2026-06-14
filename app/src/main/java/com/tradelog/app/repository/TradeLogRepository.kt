@@ -214,6 +214,12 @@ class TradeLogRepository(
         return eventDao.highImpactBetween(start, end)
     }
 
+    /** Upcoming high-impact events from now up to [withinMillis] ahead (default 7 days). */
+    suspend fun upcomingHighImpact(withinMillis: Long = 7L * 24 * 60 * 60 * 1000): List<EconomicEvent> {
+        val now = System.currentTimeMillis()
+        return eventDao.highImpactBetween(now, now + withinMillis)
+    }
+
     private fun FFEvent.toEntity(): EconomicEvent? {
         val impact = when (impact.trim().lowercase()) {
             "high" -> Impact.HIGH

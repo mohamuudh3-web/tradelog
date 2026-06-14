@@ -44,6 +44,11 @@
             android:enabled="true"
             android:exported="false" />
 
+        <receiver
+            android:name=".work.NewsAlertReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
     </application>
 
 </manifest>
