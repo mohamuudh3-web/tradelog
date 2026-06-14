@@ -54,7 +54,7 @@ import com.tradelog.app.data.entity.Trade
         BacktestImage::class,
         ChecklistRule::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -130,13 +130,21 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v4 -> v5: labeled backtest chart-URL slots. */
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE backtests ADD COLUMN chart5Url TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE backtests ADD COLUMN chart15Url TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "tradelog.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .fallbackToDestructiveMigration()
                     .build().also { INSTANCE = it }
             }

@@ -178,6 +178,9 @@ data class Backtest(
     @ColumnInfo(defaultValue = "") val checkedRules: String = "",
     /** Comma-separated remote image URLs (in addition to local screenshots). */
     @ColumnInfo(defaultValue = "") val imageUrls: String = "",
+    /** Labeled chart snapshot URLs (RyzeLog style). */
+    @ColumnInfo(defaultValue = "") val chart5Url: String = "",
+    @ColumnInfo(defaultValue = "") val chart15Url: String = "",
     val notes: String = "",
     val createdAt: Long = 0L
 )

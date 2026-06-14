@@ -9,6 +9,7 @@ import com.tradelog.app.repository.TradeLogRepository
 import com.tradelog.app.ui.analytics.AnalyticsViewModel
 import com.tradelog.app.ui.backtest.BacktestEditViewModel
 import com.tradelog.app.ui.backtest.BacktestListViewModel
+import com.tradelog.app.ui.backtest.BacktestStatsViewModel
 import com.tradelog.app.ui.calendar.CalendarViewModel
 import com.tradelog.app.ui.dashboard.DashboardViewModel
 import com.tradelog.app.ui.goals.GoalsViewModel
@@ -49,6 +50,7 @@ class AppViewModelFactory(private val repo: TradeLogRepository) : ViewModelProvi
             modelClass.isAssignableFrom(InstrumentViewModel::class.java) -> InstrumentViewModel(repo)
             modelClass.isAssignableFrom(BacktestListViewModel::class.java) -> BacktestListViewModel(repo)
             modelClass.isAssignableFrom(BacktestEditViewModel::class.java) -> BacktestEditViewModel(repo)
+            modelClass.isAssignableFrom(BacktestStatsViewModel::class.java) -> BacktestStatsViewModel(repo)
             else -> throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
         }
         return vm as T

@@ -19,6 +19,7 @@ import androidx.navigation.navArgument
 import com.tradelog.app.ui.analytics.AnalyticsScreen
 import com.tradelog.app.ui.backtest.BacktestEditScreen
 import com.tradelog.app.ui.backtest.BacktestGalleryScreen
+import com.tradelog.app.ui.backtest.BacktestStatsScreen
 import com.tradelog.app.ui.calendar.CalendarScreen
 import com.tradelog.app.ui.dashboard.DashboardScreen
 import com.tradelog.app.ui.goals.GoalsScreen
@@ -204,8 +205,12 @@ fun AppRoot(openCalendar: Boolean, onCalendarConsumed: () -> Unit) {
                 BacktestGalleryScreen(
                     onAdd = { navController.navigate(Routes.backtestEdit()) },
                     onOpen = { id -> navController.navigate(Routes.backtestEdit(id)) },
+                    onStats = { navController.navigate(Routes.BACKTEST_STATS) },
                     onBack = { navController.popBackStack() }
                 )
+            }
+            composable(Routes.BACKTEST_STATS) {
+                BacktestStatsScreen(onBack = { navController.popBackStack() })
             }
             composable(
                 route = "${Routes.BACKTEST_EDIT}?id={id}",

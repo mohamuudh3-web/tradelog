@@ -25,13 +25,16 @@ import kotlinx.coroutines.launch
 /** Gallery list of backtests with a cover thumbnail per item. */
 class BacktestListViewModel(repo: TradeLogRepository) : ViewModel() {
 
-    data class Item(val backtest: Backtest, val coverPath: String?, val imageCount: Int)
+    data class Item(val backtest: Backtest, val coverModel: Any?, val imageCount: Int)
 
     val items: StateFlow<List<Item>> = combine(repo.backtests, repo.backtestImages) { backtests, images ->
         val byId = images.groupBy { it.backtestId }
         backtests.map { bt ->
             val imgs = byId[bt.id].orEmpty()
-            Item(bt, imgs.firstOrNull()?.path, imgs.size)
+            val charts = listOf(bt.chart5Url, bt.chart15Url).filter { it.isNotBlank() }
+            // Cover: first device image (File) else first chart URL (String) — Coil handles both.
+            val cover: Any? = imgs.firstOrNull()?.let { java.io.File(it.path) } ?: charts.firstOrNull()
+            Item(bt, cover, imgs.size + charts.size)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }
@@ -47,6 +50,8 @@ data class BacktestForm(
     val bias: String = "",
     val checkedRules: Set<Long> = emptySet(),
     val imageUrls: List<String> = emptyList(),
+    val chart5Url: String = "",
+    val chart15Url: String = "",
     val notes: String = "",
     val dateMillis: Long = System.currentTimeMillis()
 )
@@ -67,6 +72,7 @@ class BacktestEditViewModel(private val repo: TradeLogRepository) : ViewModel() 
 
     fun addInstrument(name: String, pip: Double) = viewModelScope.launch { repo.addInstrument(name, pip) }
     fun addChecklistRule(text: String) = viewModelScope.launch { repo.addChecklistRule(text) }
+    fun deleteRule(rule: ChecklistRule) = viewModelScope.launch { repo.deleteChecklistRule(rule) }
     fun toggleRule(id: Long) = _form.update {
         it.copy(checkedRules = if (id in it.checkedRules) it.checkedRules - id else it.checkedRules + id)
     }
@@ -92,6 +98,7 @@ class BacktestEditViewModel(private val repo: TradeLogRepository) : ViewModel() 
                     bias = b.bias,
                     checkedRules = b.checkedRules.split(",").mapNotNull { it.trim().toLongOrNull() }.toSet(),
                     imageUrls = b.imageUrls.split(",").map { it.trim() }.filter { it.isNotBlank() },
+                    chart5Url = b.chart5Url, chart15Url = b.chart15Url,
                     notes = b.notes, dateMillis = b.dateMillis
                 )
             }
@@ -116,6 +123,8 @@ class BacktestEditViewModel(private val repo: TradeLogRepository) : ViewModel() 
                 tpPips = f.tpPips.toDoubleOrNull(),
                 checkedRules = f.checkedRules.joinToString(",") { it.toString() },
                 imageUrls = f.imageUrls.joinToString(","),
+                chart5Url = f.chart5Url.trim(),
+                chart15Url = f.chart15Url.trim(),
                 notes = f.notes.trim()
             )
         )

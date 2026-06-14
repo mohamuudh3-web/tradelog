@@ -9,10 +9,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -102,9 +107,21 @@ fun PositionCalcScreen(onBack: () -> Unit) {
 
             if (presets.isNotEmpty()) {
                 SectionCard(title = "Presets") {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Tap to apply · ✕ to delete", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
                         items(presets, key = { it.id }) { p ->
-                            AssistChip(onClick = { vm.applyPreset(p) }, label = { Text(p.name) })
+                            InputChip(
+                                selected = false,
+                                onClick = { vm.applyPreset(p) },
+                                label = { Text(p.name) },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Filled.Close,
+                                        contentDescription = "Delete preset",
+                                        modifier = Modifier.size(16.dp).clickable { vm.deletePreset(p) }
+                                    )
+                                }
+                            )
                         }
                     }
                 }

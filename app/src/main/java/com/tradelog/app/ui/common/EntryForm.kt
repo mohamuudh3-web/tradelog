@@ -8,11 +8,15 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -41,7 +45,8 @@ fun ConfirmationChecklist(
     rules: List<ChecklistRule>,
     checked: Set<Long>,
     onToggle: (Long) -> Unit,
-    onAddRule: (String) -> Unit
+    onAddRule: (String) -> Unit,
+    onDeleteRule: ((ChecklistRule) -> Unit)? = null
 ) {
     var newRule by remember { mutableStateOf("") }
     SectionCard {
@@ -55,7 +60,12 @@ fun ConfirmationChecklist(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(checked = rule.id in checked, onCheckedChange = { onToggle(rule.id) })
-                Text(rule.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 4.dp))
+                Text(rule.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(start = 4.dp))
+                if (onDeleteRule != null) {
+                    IconButton(onClick = { onDeleteRule(rule) }) {
+                        Icon(Icons.Filled.Close, "Delete rule", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Goal
+import com.tradelog.app.data.entity.Impact
 import com.tradelog.app.data.entity.TaskCategory
 import com.tradelog.app.data.entity.TaskItem
 import com.tradelog.app.data.entity.Trade
@@ -59,7 +60,10 @@ class DashboardViewModel(private val repo: TradeLogRepository) : ViewModel() {
     /** Next few upcoming economic events for the dashboard preview. */
     val upcomingEvents: StateFlow<List<EconomicEvent>> = repo.events.map { events ->
         val now = System.currentTimeMillis()
-        events.filter { it.dateTimeUtc >= now }.sortedBy { it.dateTimeUtc }.take(4)
+        // Home preview: high & medium impact plus bank holidays — skip low-impact noise.
+        events.filter {
+            it.dateTimeUtc >= now && it.impact in setOf(Impact.HIGH, Impact.MEDIUM, Impact.HOLIDAY)
+        }.sortedBy { it.dateTimeUtc }.take(5)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {

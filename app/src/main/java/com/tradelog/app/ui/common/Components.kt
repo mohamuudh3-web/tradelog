@@ -142,9 +142,10 @@ fun resultColor(result: TradeResult): Color = when (result) {
 }
 
 fun impactColor(impact: Impact): Color = when (impact) {
-    Impact.HIGH -> Color(0xFFE84855)   // red
-    Impact.MEDIUM -> Color(0xFFFF8C2B) // orange
-    Impact.LOW -> Color(0xFFE3B341)    // yellow
+    Impact.HIGH -> Color(0xFFEF4444)    // red
+    Impact.MEDIUM -> Color(0xFFFBBF24)  // amber
+    Impact.LOW -> Color(0xFF16A34A)     // green (matches Myfxbook low rows)
+    Impact.HOLIDAY -> Color(0xFF6E8BB0) // grey-blue
 }
 
 val ScreenPadding = PaddingValues(16.dp)

@@ -15,4 +15,4 @@ enum class TaskCategory { TASK, ROUTINE }
 
 enum class PayoutStatus { PENDING, PAID }
 
-enum class Impact { LOW, MEDIUM, HIGH }
+enum class Impact { LOW, MEDIUM, HIGH, HOLIDAY }

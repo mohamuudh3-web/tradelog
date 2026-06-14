@@ -60,6 +60,7 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
 
     fun addInstrument(name: String, pip: Double) = viewModelScope.launch { repo.addInstrument(name, pip) }
     fun addChecklistRule(text: String) = viewModelScope.launch { repo.addChecklistRule(text) }
+    fun deleteRule(rule: ChecklistRule) = viewModelScope.launch { repo.deleteChecklistRule(rule) }
     fun toggleRule(id: Long) = _form.update {
         it.copy(checkedRules = if (id in it.checkedRules) it.checkedRules - id else it.checkedRules + id)
     }

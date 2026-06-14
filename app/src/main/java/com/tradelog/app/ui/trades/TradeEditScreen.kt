@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -57,6 +58,7 @@ import com.tradelog.app.ui.common.FormField
 import com.tradelog.app.ui.common.ImageUrlField
 import com.tradelog.app.ui.common.PsychologyChips
 import com.tradelog.app.ui.common.SectionCard
+import com.tradelog.app.ui.common.resultColor
 import com.tradelog.app.util.ImageStorage
 import kotlinx.coroutines.launch
 import java.io.File
@@ -117,7 +119,15 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
             Text("Result")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TradeResult.entries.forEach { r ->
-                    FilterChip(form.result == r, { vm.update { it.copy(result = r) } }, { Text(r.name) })
+                    FilterChip(
+                        selected = form.result == r,
+                        onClick = { vm.update { it.copy(result = r) } },
+                        label = { Text(r.name) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = resultColor(r),
+                            selectedLabelColor = Color.White
+                        )
+                    )
                 }
             }
 
@@ -142,7 +152,8 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
                 rules = rules,
                 checked = form.checkedRules,
                 onToggle = vm::toggleRule,
-                onAddRule = vm::addChecklistRule
+                onAddRule = vm::addChecklistRule,
+                onDeleteRule = vm::deleteRule
             )
 
             Text("Psychology (before entry)")

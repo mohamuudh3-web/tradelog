@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 enum class DayRange { TODAY, TOMORROW, WEEK }
@@ -25,11 +26,13 @@ data class CalendarUiState(
 
 class CalendarViewModel(private val repo: TradeLogRepository) : ViewModel() {
 
-    private val _impactFilter = MutableStateFlow<Impact?>(null) // null = all
-    val impactFilter: StateFlow<Impact?> = _impactFilter.asStateFlow()
+    // Multi-select impacts (checked = shown). Default: high, medium, holiday (skip low noise).
+    private val _impacts = MutableStateFlow(setOf(Impact.HIGH, Impact.MEDIUM, Impact.HOLIDAY))
+    val impacts: StateFlow<Set<Impact>> = _impacts.asStateFlow()
 
-    private val _currencyFilter = MutableStateFlow<String?>(null)
-    val currencyFilter: StateFlow<String?> = _currencyFilter.asStateFlow()
+    // Currencies that are unchecked/hidden. Empty = show all.
+    private val _excludedCurrencies = MutableStateFlow<Set<String>>(emptySet())
+    val excludedCurrencies: StateFlow<Set<String>> = _excludedCurrencies.asStateFlow()
 
     private val _dayRange = MutableStateFlow(DayRange.WEEK)
     val dayRange: StateFlow<DayRange> = _dayRange.asStateFlow()
@@ -42,16 +45,16 @@ class CalendarViewModel(private val repo: TradeLogRepository) : ViewModel() {
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val events: StateFlow<List<EconomicEvent>> = combine(
-        repo.events, _impactFilter, _currencyFilter, _dayRange
-    ) { events, impact, currency, range ->
+        repo.events, _impacts, _excludedCurrencies, _dayRange
+    ) { events, impacts, excluded, range ->
         val (start, end) = when (range) {
             DayRange.TODAY -> DateUtils.dayEpochBounds(DateUtils.today())
             DayRange.TOMORROW -> DateUtils.dayEpochBounds(DateUtils.today().plusDays(1))
             DayRange.WEEK -> Long.MIN_VALUE to Long.MAX_VALUE
         }
         events.filter {
-            (impact == null || it.impact == impact) &&
-                (currency == null || it.country == currency) &&
+            it.impact in impacts &&
+                it.country !in excluded &&
                 it.dateTimeUtc in start..end
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -66,8 +69,12 @@ class CalendarViewModel(private val repo: TradeLogRepository) : ViewModel() {
         }
     }
 
-    fun setImpact(i: Impact?) { _impactFilter.value = i }
-    fun setCurrency(c: String?) { _currencyFilter.value = c }
+    fun toggleImpact(i: Impact) = _impacts.update { if (i in it) it - i else it + i }
+    fun setAllImpacts(on: Boolean) { _impacts.value = if (on) Impact.entries.toSet() else emptySet() }
+    fun toggleCurrency(c: String) = _excludedCurrencies.update { if (c in it) it - c else it + c }
+    fun setAllCurrencies(on: Boolean, all: List<String>) {
+        _excludedCurrencies.value = if (on) emptySet() else all.toSet()
+    }
     fun setDayRange(r: DayRange) { _dayRange.value = r }
 
     fun refresh() {

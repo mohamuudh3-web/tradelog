@@ -2,14 +2,15 @@ package com.tradelog.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Teal = Color(0xFF2EC4B6)
-val TealDark = Color(0xFF1FA295)
-val Red = Color(0xFFE84855)
-val Amber = Color(0xFFFFB400)
+val Teal = Color(0xFF12D6A0)      // brand mint
+val TealDark = Color(0xFF0FB389)
+val Periwinkle = Color(0xFF5C7CFF)
+val Red = Color(0xFFDC2626)
+val Amber = Color(0xFFFBBF24)
 
-val Win = Color(0xFF2EC4B6)
-val Loss = Color(0xFFE84855)
-val Neutral = Color(0xFF9AA5B1)
+val Win = Color(0xFF009669)       // RyzeLog WIN green
+val Loss = Color(0xFFDC2626)      // RyzeLog LOSS red
+val Neutral = Color(0xFF6B7280)   // BE grey
 
 // Dark scheme
 val DarkBg = Color(0xFF0F1722)

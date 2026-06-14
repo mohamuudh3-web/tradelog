@@ -22,10 +22,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,6 +67,7 @@ import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
 import com.tradelog.app.ui.common.ImageUrlField
 import com.tradelog.app.ui.common.Pill
+import com.tradelog.app.ui.common.ZoomableAsyncImage
 import com.tradelog.app.ui.theme.Loss
 import com.tradelog.app.ui.theme.Neutral
 import com.tradelog.app.ui.theme.Teal
@@ -75,6 +79,24 @@ import java.io.File
 
 private val SCENARIOS = listOf("S1", "S2", "S3", "S4", "London", "New York", "Asia", "Other")
 
+@Composable
+private fun ChartSlot(label: String, accent: Color, url: String, onUrl: (String) -> Unit) {
+    SectionCard {
+        Text(label, color = accent, style = MaterialTheme.typography.labelLarge)
+        androidx.compose.material3.OutlinedTextField(
+            value = url,
+            onValueChange = onUrl,
+            label = { Text("Paste image URL") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+        )
+        if (url.isNotBlank()) {
+            ZoomableAsyncImage(url, Modifier.fillMaxWidth().height(180.dp).padding(top = 8.dp).clip(RoundedCornerShape(10.dp)))
+            androidx.compose.material3.TextButton(onClick = { onUrl("") }) { Text("Clear") }
+        }
+    }
+}
+
 private fun backtestResultColor(result: String): Color = when (result.uppercase()) {
     "WIN" -> Win
     "LOSS" -> Loss
@@ -82,13 +104,14 @@ private fun backtestResultColor(result: String): Color = when (result.uppercase(
 }
 
 @Composable
-fun BacktestGalleryScreen(onAdd: () -> Unit, onOpen: (Long) -> Unit, onBack: () -> Unit) {
+fun BacktestGalleryScreen(onAdd: () -> Unit, onOpen: (Long) -> Unit, onStats: () -> Unit, onBack: () -> Unit) {
     val vm: BacktestListViewModel = appViewModel()
     val items by vm.items.collectAsStateWithLifecycle()
 
     DetailScaffold(
         title = "Backtesting journal",
         onBack = onBack,
+        actions = { IconButton(onClick = onStats) { Icon(Icons.Filled.BarChart, "Statistics") } },
         floatingActionButton = { FloatingActionButton(onClick = onAdd) { Icon(Icons.Filled.Add, "New backtest") } }
     ) { inner ->
         if (items.isEmpty()) {
@@ -116,9 +139,9 @@ fun BacktestGalleryScreen(onAdd: () -> Unit, onOpen: (Long) -> Unit, onBack: () 
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (item.coverPath != null) {
+                            if (item.coverModel != null) {
                                 AsyncImage(
-                                    model = File(item.coverPath),
+                                    model = item.coverModel,
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
@@ -217,15 +240,26 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
                     )
                 }
             }
-            Text("Result", style = MaterialTheme.typography.labelLarge)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("WIN", "LOSS", "BE").forEach { r ->
-                    FilterChip(
-                        selected = form.result == r,
-                        onClick = { vm.update { it.copy(result = if (it.result == r) "" else r) } },
-                        label = { Text(r) }
+            Text("Backtest result", style = MaterialTheme.typography.labelLarge)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val isWin = form.result == "WIN"
+                val isLoss = form.result == "LOSS"
+                Button(
+                    onClick = { vm.update { it.copy(result = if (it.result == "WIN") "" else "WIN") } },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isWin) Win else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (isWin) Color.White else MaterialTheme.colorScheme.onSurface
                     )
-                }
+                ) { Text("WIN") }
+                Button(
+                    onClick = { vm.update { it.copy(result = if (it.result == "LOSS") "" else "LOSS") } },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isLoss) Loss else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (isLoss) Color.White else MaterialTheme.colorScheme.onSurface
+                    )
+                ) { Text("LOSS") }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FormField(form.slPips, { v -> vm.update { it.copy(slPips = v) } }, "SL pips", Modifier.weight(1f), keyboardType = KeyboardType.Number)
@@ -237,22 +271,14 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
                 rules = rules,
                 checked = form.checkedRules,
                 onToggle = vm::toggleRule,
-                onAddRule = vm::addChecklistRule
+                onAddRule = vm::addChecklistRule,
+                onDeleteRule = vm::deleteRule
             )
 
             FormField(form.notes, { v -> vm.update { it.copy(notes = v) } }, "Notes — what you saw, why you'd take it", singleLine = false, minLines = 4)
 
-            ImageUrlField(onAdd = vm::addImageUrl, label = "Paste chart image URL")
-            form.imageUrls.forEach { url ->
-                Box(Modifier.fillMaxWidth().height(180.dp)) {
-                    AsyncImage(url, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(10.dp)))
-                    IconButton(
-                        onClick = { vm.removeImageUrl(url) },
-                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(28.dp)
-                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-                    ) { Icon(Icons.Filled.Close, "Remove", tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(18.dp)) }
-                }
-            }
+            ChartSlot("5MIN CHART", Color(0xFF3B82F6), form.chart5Url) { v -> vm.update { it.copy(chart5Url = v) } }
+            ChartSlot("15MIN CHART", Win, form.chart15Url) { v -> vm.update { it.copy(chart15Url = v) } }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Device screenshots (${images.size})", style = MaterialTheme.typography.titleMedium)
@@ -274,10 +300,8 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
                 ) {
                     items(images, key = { it.id }) { img ->
                         Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(10.dp))) {
-                            AsyncImage(
+                            ZoomableAsyncImage(
                                 model = File(img.path),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
                             IconButton(

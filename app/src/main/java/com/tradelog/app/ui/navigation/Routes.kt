@@ -32,6 +32,7 @@ object Routes {
     const val INSTRUMENTS = "instruments"
     const val BACKTESTS = "backtests"
     const val BACKTEST_EDIT = "backtest_edit" // ?id=
+    const val BACKTEST_STATS = "backtest_stats"
 
     fun tradeEdit(id: Long = 0L) = "$TRADE_EDIT?id=$id"
     fun tradeDetail(id: Long) = "$TRADE_DETAIL/$id"

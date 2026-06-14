@@ -235,7 +235,8 @@ class TradeLogRepository(
             "high" -> Impact.HIGH
             "medium" -> Impact.MEDIUM
             "low" -> Impact.LOW
-            else -> return null // skip Holiday / Non-Economic / unknown
+            "holiday" -> Impact.HOLIDAY
+            else -> return null // skip Non-Economic / unknown
         }
         val millis = try {
             OffsetDateTime.parse(date).toInstant().toEpochMilli()
