@@ -10,6 +10,7 @@ import androidx.room.Upsert
 import com.tradelog.app.data.entity.Account
 import com.tradelog.app.data.entity.Backtest
 import com.tradelog.app.data.entity.BacktestImage
+import com.tradelog.app.data.entity.ChecklistRule
 import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.Goal
@@ -192,6 +193,21 @@ interface TaskDao {
 
     @Query("SELECT COUNT(*) FROM task_completions WHERE date BETWEEN :start AND :end")
     suspend fun countCompletionsBetween(start: String, end: String): Int
+}
+
+@Dao
+interface ChecklistRuleDao {
+    @Query("SELECT * FROM checklist_rules ORDER BY sortOrder ASC, id ASC")
+    fun observeAll(): Flow<List<ChecklistRule>>
+
+    @Query("SELECT COUNT(*) FROM checklist_rules")
+    suspend fun count(): Int
+
+    @Insert
+    suspend fun insert(rule: ChecklistRule): Long
+
+    @Delete
+    suspend fun delete(rule: ChecklistRule)
 }
 
 @Dao

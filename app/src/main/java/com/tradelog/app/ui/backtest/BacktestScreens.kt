@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -23,16 +24,23 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,9 +55,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.tradelog.app.di.appViewModel
 import com.tradelog.app.ui.common.ConfirmDeleteAction
+import com.tradelog.app.ui.common.ConfirmationChecklist
+import com.tradelog.app.ui.common.DatePickerField
 import com.tradelog.app.ui.common.DetailScaffold
+import com.tradelog.app.ui.common.DropdownField
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
+import com.tradelog.app.ui.common.ImageUrlField
 import com.tradelog.app.ui.common.Pill
 import com.tradelog.app.ui.theme.Loss
 import com.tradelog.app.ui.theme.Neutral
@@ -59,6 +71,8 @@ import com.tradelog.app.util.DateUtils
 import androidx.compose.material3.FilterChip
 import androidx.compose.ui.graphics.Color
 import java.io.File
+
+private val SCENARIOS = listOf("S1", "S2", "S3", "S4", "London", "New York", "Asia", "Other")
 
 private fun backtestResultColor(result: String): Color = when (result.uppercase()) {
     "WIN" -> Win
@@ -157,7 +171,9 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
     val form by vm.form.collectAsStateWithLifecycle()
     val images by vm.images.collectAsStateWithLifecycle()
     val instruments by vm.instruments.collectAsStateWithLifecycle()
+    val rules by vm.checklistRules.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var showAddPair by remember { mutableStateOf(false) }
 
     LaunchedEffect(backtestId) { vm.load(backtestId) }
 
@@ -178,17 +194,17 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             FormField(form.title, { v -> vm.update { it.copy(title = v) } }, "Title")
-            FormField(form.instrument, { v -> vm.update { it.copy(instrument = v) } }, "Instrument")
-            if (instruments.isNotEmpty()) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    instruments.take(6).forEach { ins ->
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.clickable { vm.update { it.copy(instrument = ins.name) } }
-                        ) { Text(ins.name, Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium) }
+            DatePickerField("Date", form.dateMillis) { picked -> vm.update { it.copy(dateMillis = picked) } }
+            DropdownField("Scenario", SCENARIOS, form.session.ifBlank { null }, { it }, { s -> vm.update { it.copy(session = s) } })
+
+            FormField(form.instrument, { v -> vm.update { it.copy(instrument = v) } }, "Symbol / pair")
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
+                    androidx.compose.foundation.lazy.items(instruments, key = { it.id }) { ins ->
+                        FilterChip(form.instrument.equals(ins.name, true), { vm.update { it.copy(instrument = ins.name) } }, { Text(ins.name) })
                     }
                 }
+                IconButton(onClick = { showAddPair = true }) { Icon(Icons.Filled.Add, "Add pair") }
             }
             Text("Direction", style = MaterialTheme.typography.labelLarge)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -210,14 +226,35 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
                     )
                 }
             }
-            FormField(form.session, { v -> vm.update { it.copy(session = v) } }, "Session / strategy tag (e.g. S2, London)")
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                FormField(form.slPips, { v -> vm.update { it.copy(slPips = v) } }, "SL pips", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+                FormField(form.tpPips, { v -> vm.update { it.copy(tpPips = v) } }, "TP pips", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+            }
             FormField(form.bias, { v -> vm.update { it.copy(bias = v) } }, "Bias note (e.g. Bullish, A+ setup)")
+
+            ConfirmationChecklist(
+                rules = rules,
+                checked = form.checkedRules,
+                onToggle = vm::toggleRule,
+                onAddRule = vm::addChecklistRule
+            )
+
             FormField(form.notes, { v -> vm.update { it.copy(notes = v) } }, "Notes — what you saw, why you'd take it", singleLine = false, minLines = 4)
 
-            Text("Date: ${DateUtils.formatEpochDate(form.dateMillis)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            ImageUrlField(onAdd = vm::addImageUrl, label = "Paste chart image URL")
+            form.imageUrls.forEach { url ->
+                Box(Modifier.fillMaxWidth().height(180.dp)) {
+                    AsyncImage(url, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(10.dp)))
+                    IconButton(
+                        onClick = { vm.removeImageUrl(url) },
+                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(28.dp)
+                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                    ) { Icon(Icons.Filled.Close, "Remove", tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(18.dp)) }
+                }
+            }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Screenshots (${images.size})", style = MaterialTheme.typography.titleMedium)
+                Text("Device screenshots (${images.size})", style = MaterialTheme.typography.titleMedium)
                 OutlinedButton(onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                     Icon(Icons.Filled.Image, null)
                     Text("  Add")
@@ -252,5 +289,27 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
                 }
             }
         }
+    }
+
+    if (showAddPair) {
+        var name by remember { mutableStateOf("") }
+        var pip by remember { mutableStateOf("10") }
+        AlertDialog(
+            onDismissRequest = { showAddPair = false },
+            title = { Text("Add pair") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(name, { name = it.uppercase() }, label = { Text("Symbol (e.g. EURUSD)") }, singleLine = true)
+                    OutlinedTextField(pip, { pip = it }, label = { Text("Pip value per lot") }, singleLine = true)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (name.isNotBlank()) { vm.addInstrument(name, pip.toDoubleOrNull() ?: 10.0); vm.update { it.copy(instrument = name) } }
+                    showAddPair = false
+                }) { Text("Add") }
+            },
+            dismissButton = { TextButton(onClick = { showAddPair = false }) { Text("Cancel") } }
+        )
     }
 }

@@ -17,6 +17,9 @@ class TradeDetailViewModel(private val repo: TradeLogRepository) : ViewModel() {
     private val _account = MutableStateFlow<Account?>(null)
     val account: StateFlow<Account?> = _account.asStateFlow()
 
+    private val _ruleCount = MutableStateFlow(0)
+    val ruleCount: StateFlow<Int> = _ruleCount.asStateFlow()
+
     private var loaded = false
 
     fun load(id: Long) {
@@ -26,6 +29,7 @@ class TradeDetailViewModel(private val repo: TradeLogRepository) : ViewModel() {
             val t = repo.getTrade(id)
             _trade.value = t
             t?.accountId?.let { _account.value = repo.getAccount(it) }
+            _ruleCount.value = repo.checklistRuleCount()
         }
     }
 

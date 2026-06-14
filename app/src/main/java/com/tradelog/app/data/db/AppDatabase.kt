@@ -9,6 +9,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.tradelog.app.data.dao.AccountDao
 import com.tradelog.app.data.dao.BacktestDao
+import com.tradelog.app.data.dao.ChecklistRuleDao
 import com.tradelog.app.data.dao.EconomicEventDao
 import com.tradelog.app.data.dao.InstrumentDao
 import com.tradelog.app.data.dao.GoalDao
@@ -22,6 +23,7 @@ import com.tradelog.app.data.dao.TradeDao
 import com.tradelog.app.data.entity.Account
 import com.tradelog.app.data.entity.Backtest
 import com.tradelog.app.data.entity.BacktestImage
+import com.tradelog.app.data.entity.ChecklistRule
 import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.Goal
@@ -49,9 +51,10 @@ import com.tradelog.app.data.entity.Trade
         PositionPreset::class,
         Instrument::class,
         Backtest::class,
-        BacktestImage::class
+        BacktestImage::class,
+        ChecklistRule::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -68,6 +71,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun positionPresetDao(): PositionPresetDao
     abstract fun instrumentDao(): InstrumentDao
     abstract fun backtestDao(): BacktestDao
+    abstract fun checklistRuleDao(): ChecklistRuleDao
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
@@ -105,13 +109,34 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v3 -> v4: trade session/pips/psychology/checklist/urls, backtest pips/checklist/urls, checklist rules. */
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE trades ADD COLUMN session TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE trades ADD COLUMN slPips REAL")
+                db.execSQL("ALTER TABLE trades ADD COLUMN tpPips REAL")
+                db.execSQL("ALTER TABLE trades ADD COLUMN psychology TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE trades ADD COLUMN checkedRules TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE trades ADD COLUMN imageUrls TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE backtests ADD COLUMN slPips REAL")
+                db.execSQL("ALTER TABLE backtests ADD COLUMN tpPips REAL")
+                db.execSQL("ALTER TABLE backtests ADD COLUMN checkedRules TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE backtests ADD COLUMN imageUrls TEXT NOT NULL DEFAULT ''")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS checklist_rules (" +
+                        "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                        "text TEXT NOT NULL, sortOrder INTEGER NOT NULL)"
+                )
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "tradelog.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigration()
                     .build().also { INSTANCE = it }
             }

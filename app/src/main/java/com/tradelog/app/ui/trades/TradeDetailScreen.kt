@@ -43,6 +43,7 @@ fun TradeDetailScreen(tradeId: Long, onBack: () -> Unit, onEdit: () -> Unit) {
     val vm: TradeDetailViewModel = appViewModel()
     val trade by vm.trade.collectAsStateWithLifecycle()
     val account by vm.account.collectAsStateWithLifecycle()
+    val ruleCount by vm.ruleCount.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
 
     LaunchedEffect(tradeId) { vm.load(tradeId) }
@@ -73,25 +74,43 @@ fun TradeDetailScreen(tradeId: Long, onBack: () -> Unit, onEdit: () -> Unit) {
             SectionCard {
                 DetailRow("P&L", Format.signedMoney(t.pnl))
                 DetailRow("R multiple", Format.rMultiple(t.rMultiple))
+                if (t.session.isNotBlank()) DetailRow("Session", t.session)
                 DetailRow("Entry", t.entryPrice.toString())
                 DetailRow("Exit", t.exitPrice?.toString() ?: "—")
                 DetailRow("Lot size", t.lotSize.toString())
                 DetailRow("Risk %", t.riskPercent?.let { "$it%" } ?: "—")
+                t.slPips?.let { DetailRow("SL pips", it.toString()) }
+                t.tpPips?.let { DetailRow("TP pips", it.toString()) }
                 DetailRow("Account", account?.name ?: "—")
                 DetailRow("Date", DateUtils.formatEpochDateTime(t.openedAt))
+                if (ruleCount > 0) {
+                    val met = t.checkedRules.toIdSet().size
+                    DetailRow("Confirmation", "$met/$ruleCount · ${com.tradelog.app.util.Grade.of(met, ruleCount)}")
+                }
+            }
+
+            val psych = t.psychology.toTagSet()
+            if (psych.isNotEmpty()) {
+                SectionCard(title = "Psychology") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        psych.take(6).forEach { Pill(it, MaterialTheme.colorScheme.primary) }
+                    }
+                }
             }
 
             if (t.notes.isNotBlank()) {
                 SectionCard(title = "Notes") { Text(t.notes, style = MaterialTheme.typography.bodyMedium) }
             }
 
-            t.screenshotUri?.let { path ->
-                SectionCard(title = "Screenshot") {
-                    AsyncImage(
-                        model = File(path),
-                        contentDescription = "Trade screenshot",
-                        modifier = Modifier.fillMaxWidth().height(240.dp)
-                    )
+            val urls = t.imageUrls.toUrlList()
+            if (t.screenshotUri != null || urls.isNotEmpty()) {
+                SectionCard(title = "Screenshots") {
+                    t.screenshotUri?.let { path ->
+                        AsyncImage(model = File(path), contentDescription = null, modifier = Modifier.fillMaxWidth().height(240.dp).padding(bottom = 8.dp))
+                    }
+                    urls.forEach { url ->
+                        AsyncImage(model = url, contentDescription = null, modifier = Modifier.fillMaxWidth().height(240.dp).padding(bottom = 8.dp))
+                    }
                 }
             }
         }

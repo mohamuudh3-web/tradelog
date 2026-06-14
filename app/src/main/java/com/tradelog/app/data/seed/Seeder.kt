@@ -101,6 +101,7 @@ object Seeder {
 
         seedV2(repo)
         seedV3(repo)
+        seedV4(repo)
     }
 
     /** Incremental seed for features added after v1 (saved pairs, morning routine). Idempotent-guarded by caller. */
@@ -131,6 +132,17 @@ object Seeder {
         ).forEachIndexed { i, t ->
             repo.saveTask(TaskItem(title = t, frequency = TaskFrequency.DAILY, category = TaskCategory.ROUTINE, sortOrder = i, createdAt = now))
         }
+    }
+
+    /** Default confirmation checklist rules. */
+    suspend fun seedV4(repo: TradeLogRepository) {
+        listOf(
+            "Find the trend (H1/H4 for S1, 15M for S2/S3, 5M for S4)",
+            "Find the institutional order-flow zone",
+            "Wait for the liquidity grab with reversal volume",
+            "Confirm volume drives the countertrend break",
+            "Confirm momentum aligns with the direction"
+        ).forEach { repo.addChecklistRule(it) }
     }
 
     /** Example backtests so the gallery shows its layout on first run. */

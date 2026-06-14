@@ -31,6 +31,15 @@ data class Trade(
     /** Realized money result, positive for profit, negative for loss. Used for net P&L. */
     val pnl: Double = 0.0,
     val setupTag: String? = null,
+    @ColumnInfo(defaultValue = "") val session: String = "",
+    val slPips: Double? = null,
+    val tpPips: Double? = null,
+    /** Comma-separated psychology tags chosen before entry. */
+    @ColumnInfo(defaultValue = "") val psychology: String = "",
+    /** Comma-separated ids of confirmation rules that were checked. */
+    @ColumnInfo(defaultValue = "") val checkedRules: String = "",
+    /** Comma-separated remote image URLs (in addition to the local screenshot). */
+    @ColumnInfo(defaultValue = "") val imageUrls: String = "",
     val notes: String = "",
     /** content:// or file:// uri to a screenshot, if any. */
     val screenshotUri: String? = null,
@@ -133,6 +142,13 @@ data class TaskCompletion(
     val date: String
 )
 
+@Entity(tableName = "checklist_rules")
+data class ChecklistRule(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val text: String,
+    val sortOrder: Int = 0
+)
+
 @Entity(tableName = "instruments", indices = [Index(value = ["name"], unique = true)])
 data class Instrument(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -154,8 +170,14 @@ data class Backtest(
     @ColumnInfo(defaultValue = "") val direction: String = "",
     /** "WIN" / "LOSS" / "BE" / "" */
     @ColumnInfo(defaultValue = "") val result: String = "",
-    /** Session / strategy tag, e.g. "S2", "London". */
+    /** Session / scenario tag, e.g. "S2", "London". */
     @ColumnInfo(defaultValue = "") val session: String = "",
+    val slPips: Double? = null,
+    val tpPips: Double? = null,
+    /** Comma-separated ids of confirmation rules that were checked. */
+    @ColumnInfo(defaultValue = "") val checkedRules: String = "",
+    /** Comma-separated remote image URLs (in addition to local screenshots). */
+    @ColumnInfo(defaultValue = "") val imageUrls: String = "",
     val notes: String = "",
     val createdAt: Long = 0L
 )

@@ -5,6 +5,7 @@ import com.tradelog.app.data.db.AppDatabase
 import com.tradelog.app.data.entity.Account
 import com.tradelog.app.data.entity.Backtest
 import com.tradelog.app.data.entity.BacktestImage
+import com.tradelog.app.data.entity.ChecklistRule
 import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.Goal
@@ -43,6 +44,7 @@ class TradeLogRepository(
     private val presetDao = db.positionPresetDao()
     private val instrumentDao = db.instrumentDao()
     private val backtestDao = db.backtestDao()
+    private val checklistRuleDao = db.checklistRuleDao()
 
     // ---- Streams ----
     val trades: Flow<List<Trade>> = tradeDao.observeAll()
@@ -57,6 +59,7 @@ class TradeLogRepository(
     val tasks: Flow<List<TaskItem>> = taskDao.observeAll()
     val presets: Flow<List<PositionPreset>> = presetDao.observeAll()
     val instruments: Flow<List<Instrument>> = instrumentDao.observeAll()
+    val checklistRules: Flow<List<ChecklistRule>> = checklistRuleDao.observeAll()
     val backtests: Flow<List<Backtest>> = backtestDao.observeAll()
     val backtestImages: Flow<List<BacktestImage>> = backtestDao.observeAllImages()
 
@@ -179,6 +182,13 @@ class TradeLogRepository(
     }
     suspend fun deleteInstrument(instrument: Instrument) = instrumentDao.delete(instrument)
     suspend fun instrumentCount(): Int = instrumentDao.count()
+
+    // ---- Checklist rules ----
+    suspend fun addChecklistRule(text: String) {
+        if (text.isNotBlank()) checklistRuleDao.insert(ChecklistRule(text = text.trim()))
+    }
+    suspend fun deleteChecklistRule(rule: ChecklistRule) = checklistRuleDao.delete(rule)
+    suspend fun checklistRuleCount(): Int = checklistRuleDao.count()
 
     // ---- Backtests ----
     suspend fun getBacktest(id: Long): Backtest? = backtestDao.getById(id)

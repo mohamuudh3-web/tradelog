@@ -3,6 +3,7 @@ package com.tradelog.app.ui.trades
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tradelog.app.data.entity.Account
+import com.tradelog.app.data.entity.ChecklistRule
 import com.tradelog.app.data.entity.Direction
 import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.SetupTag
@@ -30,6 +31,12 @@ data class TradeForm(
     val result: TradeResult = TradeResult.WIN,
     val pnl: String = "",
     val setupTag: String = "",
+    val session: String = "",
+    val slPips: String = "",
+    val tpPips: String = "",
+    val psychology: Set<String> = emptySet(),
+    val checkedRules: Set<Long> = emptySet(),
+    val imageUrls: List<String> = emptyList(),
     val notes: String = "",
     val screenshotUri: String? = null,
     val openedAt: Long = System.currentTimeMillis()
@@ -48,6 +55,19 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
         repo.setupTags.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val instruments: StateFlow<List<Instrument>> =
         repo.instruments.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val checklistRules: StateFlow<List<ChecklistRule>> =
+        repo.checklistRules.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun addInstrument(name: String, pip: Double) = viewModelScope.launch { repo.addInstrument(name, pip) }
+    fun addChecklistRule(text: String) = viewModelScope.launch { repo.addChecklistRule(text) }
+    fun toggleRule(id: Long) = _form.update {
+        it.copy(checkedRules = if (id in it.checkedRules) it.checkedRules - id else it.checkedRules + id)
+    }
+    fun togglePsychology(tag: String) = _form.update {
+        it.copy(psychology = if (tag in it.psychology) it.psychology - tag else it.psychology + tag)
+    }
+    fun addImageUrl(url: String) = _form.update { it.copy(imageUrls = it.imageUrls + url) }
+    fun removeImageUrl(url: String) = _form.update { it.copy(imageUrls = it.imageUrls - url) }
 
     fun load(id: Long) {
         if (loaded) return
@@ -68,6 +88,12 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
                     result = t.result,
                     pnl = t.pnl.toCleanString(),
                     setupTag = t.setupTag ?: "",
+                    session = t.session,
+                    slPips = t.slPips?.toCleanString() ?: "",
+                    tpPips = t.tpPips?.toCleanString() ?: "",
+                    psychology = t.psychology.toTagSet(),
+                    checkedRules = t.checkedRules.toIdSet(),
+                    imageUrls = t.imageUrls.toUrlList(),
                     notes = t.notes,
                     screenshotUri = t.screenshotUri,
                     openedAt = t.openedAt
@@ -98,6 +124,12 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
                     result = f.result,
                     pnl = f.pnl.toDoubleOrNull() ?: 0.0,
                     setupTag = f.setupTag.trim().ifBlank { null },
+                    session = f.session.trim(),
+                    slPips = f.slPips.toDoubleOrNull(),
+                    tpPips = f.tpPips.toDoubleOrNull(),
+                    psychology = f.psychology.joinToString(","),
+                    checkedRules = f.checkedRules.joinToString(",") { it.toString() },
+                    imageUrls = f.imageUrls.joinToString(","),
                     notes = f.notes.trim(),
                     screenshotUri = f.screenshotUri,
                     openedAt = f.openedAt
@@ -111,3 +143,7 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
 
 private fun Double.toCleanString(): String =
     if (this == this.toLong().toDouble()) this.toLong().toString() else this.toString()
+
+internal fun String.toTagSet(): Set<String> = split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
+internal fun String.toIdSet(): Set<Long> = split(",").mapNotNull { it.trim().toLongOrNull() }.toSet()
+internal fun String.toUrlList(): List<String> = split(",").map { it.trim() }.filter { it.isNotBlank() }

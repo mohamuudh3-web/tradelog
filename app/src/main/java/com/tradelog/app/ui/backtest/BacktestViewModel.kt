@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tradelog.app.data.entity.Backtest
 import com.tradelog.app.data.entity.BacktestImage
+import com.tradelog.app.data.entity.ChecklistRule
 import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.repository.TradeLogRepository
 import com.tradelog.app.util.ImageStorage
@@ -41,7 +42,11 @@ data class BacktestForm(
     val direction: String = "",
     val result: String = "",
     val session: String = "",
+    val slPips: String = "",
+    val tpPips: String = "",
     val bias: String = "",
+    val checkedRules: Set<Long> = emptySet(),
+    val imageUrls: List<String> = emptyList(),
     val notes: String = "",
     val dateMillis: Long = System.currentTimeMillis()
 )
@@ -57,6 +62,16 @@ class BacktestEditViewModel(private val repo: TradeLogRepository) : ViewModel() 
 
     val instruments: StateFlow<List<Instrument>> =
         repo.instruments.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val checklistRules: StateFlow<List<ChecklistRule>> =
+        repo.checklistRules.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun addInstrument(name: String, pip: Double) = viewModelScope.launch { repo.addInstrument(name, pip) }
+    fun addChecklistRule(text: String) = viewModelScope.launch { repo.addChecklistRule(text) }
+    fun toggleRule(id: Long) = _form.update {
+        it.copy(checkedRules = if (id in it.checkedRules) it.checkedRules - id else it.checkedRules + id)
+    }
+    fun addImageUrl(url: String) = _form.update { it.copy(imageUrls = it.imageUrls + url) }
+    fun removeImageUrl(url: String) = _form.update { it.copy(imageUrls = it.imageUrls - url) }
 
     val images: StateFlow<List<BacktestImage>> =
         _id.flatMapLatest { id -> if (id == 0L) flowOf(emptyList()) else repo.observeBacktestImages(id) }
@@ -71,7 +86,12 @@ class BacktestEditViewModel(private val repo: TradeLogRepository) : ViewModel() 
             repo.getBacktest(id)?.let { b ->
                 _form.value = BacktestForm(
                     title = b.title, instrument = b.instrument, direction = b.direction,
-                    result = b.result, session = b.session, bias = b.bias,
+                    result = b.result, session = b.session,
+                    slPips = b.slPips?.toString()?.removeSuffix(".0") ?: "",
+                    tpPips = b.tpPips?.toString()?.removeSuffix(".0") ?: "",
+                    bias = b.bias,
+                    checkedRules = b.checkedRules.split(",").mapNotNull { it.trim().toLongOrNull() }.toSet(),
+                    imageUrls = b.imageUrls.split(",").map { it.trim() }.filter { it.isNotBlank() },
                     notes = b.notes, dateMillis = b.dateMillis
                 )
             }
@@ -92,6 +112,10 @@ class BacktestEditViewModel(private val repo: TradeLogRepository) : ViewModel() 
                 direction = f.direction,
                 result = f.result,
                 session = f.session.trim(),
+                slPips = f.slPips.toDoubleOrNull(),
+                tpPips = f.tpPips.toDoubleOrNull(),
+                checkedRules = f.checkedRules.joinToString(",") { it.toString() },
+                imageUrls = f.imageUrls.joinToString(","),
                 notes = f.notes.trim()
             )
         )

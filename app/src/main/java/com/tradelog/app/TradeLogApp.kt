@@ -27,7 +27,8 @@ class TradeLogApp : Application() {
             if (!prefs.getBoolean("seeded", false)) {
                 // Fresh install: full seed includes v2 + v3 data.
                 Seeder.seed(repo)
-                prefs.edit().putBoolean("seeded", true).putBoolean("seeded_v2", true).putBoolean("seeded_v3", true).apply()
+                prefs.edit().putBoolean("seeded", true).putBoolean("seeded_v2", true)
+                    .putBoolean("seeded_v3", true).putBoolean("seeded_v4", true).apply()
             } else {
                 // Incremental seeds when upgrading from an older version.
                 if (!prefs.getBoolean("seeded_v2", false)) {
@@ -37,6 +38,10 @@ class TradeLogApp : Application() {
                 if (!prefs.getBoolean("seeded_v3", false)) {
                     Seeder.seedV3(repo)
                     prefs.edit().putBoolean("seeded_v3", true).apply()
+                }
+                if (!prefs.getBoolean("seeded_v4", false)) {
+                    Seeder.seedV4(repo)
+                    prefs.edit().putBoolean("seeded_v4", true).apply()
                 }
             }
             val settings = repo.settings.settings.first()
