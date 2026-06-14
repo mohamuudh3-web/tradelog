@@ -14,14 +14,26 @@ android {
         applicationId = "com.tradelog.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        // Overridable from CI: -PappVersionCode=NN -PappVersionName=x.y.z
+        versionCode = (project.findProperty("appVersionCode") as String?)?.toIntOrNull() ?: 1
+        versionName = (project.findProperty("appVersionName") as String?) ?: "0.1.0"
         vectorDrawables { useSupportLibrary = true }
+    }
+
+    // Fixed signing key so every build updates over the previous one (no signature mismatch).
+    signingConfigs {
+        create("shared") {
+            storeFile = file("tradelog-shared.jks")
+            storePassword = "tradelog"
+            keyAlias = "tradelog"
+            keyPassword = "tradelog"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("shared")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -30,6 +42,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("shared")
         }
     }
 

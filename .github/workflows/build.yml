@@ -32,7 +32,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: ./gradlew assembleDebug --stacktrace --no-daemon -PappVersionCode=${{ github.run_number }} -PappVersionName=0.1.${{ github.run_number }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

@@ -102,6 +102,12 @@ fun SettingsScreen(onBack: () -> Unit) {
             SectionCard(title = "About") {
                 Text("TradeLog — offline-first trading journal & analytics.", style = MaterialTheme.typography.bodyMedium)
                 Text("All data is stored locally on this device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Version ${com.tradelog.app.BuildConfig.VERSION_NAME} (${com.tradelog.app.BuildConfig.VERSION_CODE})",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
             }
         }
     }
