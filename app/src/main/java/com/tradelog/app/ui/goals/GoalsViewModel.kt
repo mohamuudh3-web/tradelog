@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.tradelog.app.data.entity.Goal
 import com.tradelog.app.data.entity.GoalMetric
 import com.tradelog.app.data.entity.GoalType
+import com.tradelog.app.data.entity.TaskCategory
 import com.tradelog.app.data.entity.TaskFrequency
 import com.tradelog.app.data.entity.TaskItem
 import com.tradelog.app.repository.TradeLogRepository
@@ -26,8 +27,14 @@ class GoalsViewModel(private val repo: TradeLogRepository) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val tasks: StateFlow<List<TaskUi>> =
-        repo.tasks.map { list -> list.map { TaskUi(it, repo.isTaskDoneToday(it)) } }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        repo.tasks.map { list ->
+            list.filter { it.category == TaskCategory.TASK }.map { TaskUi(it, repo.isTaskDoneToday(it)) }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val routine: StateFlow<List<TaskUi>> =
+        repo.tasks.map { list ->
+            list.filter { it.category == TaskCategory.ROUTINE }.map { TaskUi(it, repo.isTaskDoneToday(it)) }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addGoal(title: String, type: GoalType, metric: GoalMetric, target: Int, unit: String) {
         if (title.isBlank()) return
@@ -42,7 +49,12 @@ class GoalsViewModel(private val repo: TradeLogRepository) : ViewModel() {
 
     fun addTask(title: String, frequency: TaskFrequency) {
         if (title.isBlank()) return
-        viewModelScope.launch { repo.saveTask(TaskItem(title = title.trim(), frequency = frequency)) }
+        viewModelScope.launch { repo.saveTask(TaskItem(title = title.trim(), frequency = frequency, category = TaskCategory.TASK)) }
+    }
+
+    fun addRoutine(title: String) {
+        if (title.isBlank()) return
+        viewModelScope.launch { repo.saveTask(TaskItem(title = title.trim(), frequency = TaskFrequency.DAILY, category = TaskCategory.ROUTINE)) }
     }
 
     fun toggleTask(task: TaskItem, done: Boolean) = viewModelScope.launch { repo.setTaskDone(task, done) }

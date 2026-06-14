@@ -1,5 +1,6 @@
 package com.tradelog.app.data.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -115,6 +116,7 @@ data class TaskItem(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
     val frequency: TaskFrequency = TaskFrequency.DAILY,
+    @ColumnInfo(defaultValue = "TASK") val category: TaskCategory = TaskCategory.TASK,
     /** Last date this task was completed (yyyy-MM-dd). A DAILY task counts as done today iff this == today. */
     val lastCompletedDate: String? = null,
     /** For ONCE tasks only. */
@@ -129,6 +131,35 @@ data class TaskCompletion(
     val taskId: Long,
     /** yyyy-MM-dd */
     val date: String
+)
+
+@Entity(tableName = "instruments", indices = [Index(value = ["name"], unique = true)])
+data class Instrument(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    /** Money value of 1 pip/point per 1.0 lot. */
+    val pipValuePerLot: Double = 10.0,
+    val sortOrder: Int = 0
+)
+
+@Entity(tableName = "backtests")
+data class Backtest(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val instrument: String = "",
+    val dateMillis: Long = 0L,
+    /** Free-form bias/result, e.g. "Bullish", "Win", "A+ setup". */
+    val bias: String = "",
+    val notes: String = "",
+    val createdAt: Long = 0L
+)
+
+@Entity(tableName = "backtest_images")
+data class BacktestImage(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val backtestId: Long,
+    val path: String,
+    val sortOrder: Int = 0
 )
 
 @Entity(tableName = "position_presets")

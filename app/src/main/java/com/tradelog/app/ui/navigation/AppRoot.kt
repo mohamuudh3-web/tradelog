@@ -17,6 +17,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tradelog.app.ui.analytics.AnalyticsScreen
+import com.tradelog.app.ui.backtest.BacktestEditScreen
+import com.tradelog.app.ui.backtest.BacktestGalleryScreen
 import com.tradelog.app.ui.calendar.CalendarScreen
 import com.tradelog.app.ui.dashboard.DashboardScreen
 import com.tradelog.app.ui.goals.GoalsScreen
@@ -30,6 +32,7 @@ import com.tradelog.app.ui.payouts.PayoutsScreen
 import com.tradelog.app.ui.portfolio.AccountEditScreen
 import com.tradelog.app.ui.portfolio.PortfolioScreen
 import com.tradelog.app.ui.settings.SettingsScreen
+import com.tradelog.app.ui.tools.InstrumentsScreen
 import com.tradelog.app.ui.tools.PositionCalcScreen
 import com.tradelog.app.ui.tools.ToolsScreen
 import com.tradelog.app.ui.trades.TradeDetailScreen
@@ -193,6 +196,25 @@ fun AppRoot(openCalendar: Boolean, onCalendarConsumed: () -> Unit) {
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.INSTRUMENTS) {
+                InstrumentsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.BACKTESTS) {
+                BacktestGalleryScreen(
+                    onAdd = { navController.navigate(Routes.backtestEdit()) },
+                    onOpen = { id -> navController.navigate(Routes.backtestEdit(id)) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = "${Routes.BACKTEST_EDIT}?id={id}",
+                arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = 0L })
+            ) { entry ->
+                BacktestEditScreen(
+                    backtestId = entry.arguments?.getLong("id") ?: 0L,
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }

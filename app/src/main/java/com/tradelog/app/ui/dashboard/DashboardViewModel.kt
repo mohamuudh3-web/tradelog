@@ -3,6 +3,7 @@ package com.tradelog.app.ui.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tradelog.app.data.entity.Goal
+import com.tradelog.app.data.entity.TaskCategory
 import com.tradelog.app.data.entity.TaskItem
 import com.tradelog.app.data.entity.Trade
 import com.tradelog.app.data.entity.TradeResult
@@ -46,7 +47,7 @@ class DashboardViewModel(private val repo: TradeLogRepository) : ViewModel() {
             totalTrades = trades.size,
             openGoals = goals.size,
             goals = goals.take(4).map { GoalProgressUi(it, repo.goalProgress(it)) },
-            tasks = tasks.map { TaskUi(it, repo.isTaskDoneToday(it)) },
+            tasks = tasks.filter { it.category == TaskCategory.TASK }.map { TaskUi(it, repo.isTaskDoneToday(it)) },
             recentTrades = trades.take(5),
             loading = false
         )

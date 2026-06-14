@@ -52,14 +52,22 @@ fun GoalsScreen() {
     val vm: GoalsViewModel = appViewModel()
     val goals by vm.goals.collectAsStateWithLifecycle()
     val tasks by vm.tasks.collectAsStateWithLifecycle()
+    val routine by vm.routine.collectAsStateWithLifecycle()
     var tab by remember { mutableIntStateOf(0) }
     var showGoalDialog by remember { mutableStateOf(false) }
     var showTaskDialog by remember { mutableStateOf(false) }
+    var showRoutineDialog by remember { mutableStateOf(false) }
 
     TopLevelScaffold(
         title = "Goals & Tasks",
         floatingActionButton = {
-            FloatingActionButton(onClick = { if (tab == 0) showGoalDialog = true else showTaskDialog = true }) {
+            FloatingActionButton(onClick = {
+                when (tab) {
+                    0 -> showGoalDialog = true
+                    1 -> showTaskDialog = true
+                    else -> showRoutineDialog = true
+                }
+            }) {
                 Icon(Icons.Filled.Add, "Add")
             }
         }
@@ -68,6 +76,7 @@ fun GoalsScreen() {
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Goals") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Tasks") })
+                Tab(selected = tab == 2, onClick = { tab = 2 }, text = { Text("Routine") })
             }
             if (tab == 0) {
                 if (goals.isEmpty()) EmptyState("No goals yet. Tap + to add one.")
@@ -93,25 +102,22 @@ fun GoalsScreen() {
                         }
                     }
                 }
+            } else if (tab == 1) {
+                TaskChecklist(
+                    items = tasks,
+                    emptyText = "No tasks yet. Tap + to add one.",
+                    showFrequency = true,
+                    onToggle = vm::toggleTask,
+                    onDelete = vm::deleteTask
+                )
             } else {
-                if (tasks.isEmpty()) EmptyState("No tasks yet. Tap + to add one.")
-                else LazyColumn(
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    items(tasks, key = { it.task.id }) { t ->
-                        SectionCard {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(checked = t.doneToday, onCheckedChange = { vm.toggleTask(t.task, it) })
-                                Column(Modifier.weight(1f)) {
-                                    Text(t.task.title, style = MaterialTheme.typography.bodyLarge)
-                                    Text(t.task.frequency.name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                IconButton(onClick = { vm.deleteTask(t.task) }) { Icon(Icons.Filled.Delete, "Delete") }
-                            }
-                        }
-                    }
-                }
+                TaskChecklist(
+                    items = routine,
+                    emptyText = "No routine items yet. Tap + to add one.",
+                    showFrequency = false,
+                    onToggle = vm::toggleTask,
+                    onDelete = vm::deleteTask
+                )
             }
         }
     }
@@ -122,6 +128,42 @@ fun GoalsScreen() {
     if (showTaskDialog) AddTaskDialog(onDismiss = { showTaskDialog = false }, onAdd = { title, freq ->
         vm.addTask(title, freq); showTaskDialog = false
     })
+    if (showRoutineDialog) AddRoutineDialog(onDismiss = { showRoutineDialog = false }, onAdd = { title ->
+        vm.addRoutine(title); showRoutineDialog = false
+    })
+}
+
+@Composable
+private fun TaskChecklist(
+    items: List<com.tradelog.app.ui.dashboard.TaskUi>,
+    emptyText: String,
+    showFrequency: Boolean,
+    onToggle: (com.tradelog.app.data.entity.TaskItem, Boolean) -> Unit,
+    onDelete: (com.tradelog.app.data.entity.TaskItem) -> Unit
+) {
+    if (items.isEmpty()) {
+        EmptyState(emptyText)
+        return
+    }
+    LazyColumn(
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        items(items, key = { it.task.id }) { t ->
+            SectionCard {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = t.doneToday, onCheckedChange = { onToggle(t.task, it) })
+                    Column(Modifier.weight(1f)) {
+                        Text(t.task.title, style = MaterialTheme.typography.bodyLarge)
+                        if (showFrequency) {
+                            Text(t.task.frequency.name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    IconButton(onClick = { onDelete(t.task) }) { Icon(Icons.Filled.Delete, "Delete") }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -180,6 +222,29 @@ private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, TaskFrequency) 
             }
         },
         confirmButton = { TextButton(onClick = { onAdd(title, freq) }) { Text("Add") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+private fun AddRoutineDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
+    var title by remember { mutableStateOf("") }
+    val suggestions = listOf("Woke up early", "Exercise / workout", "Clean room", "Meditate / breathe", "Hydrate", "Read", "Pray", "Plan the day")
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add to morning routine") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(title, { title = it }, label = { Text("Routine item") }, singleLine = true)
+                Text("Quick add", style = MaterialTheme.typography.labelMedium)
+                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    suggestions.forEach { s ->
+                        FilterChip(selected = title == s, onClick = { title = s }, label = { Text(s) })
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onAdd(title) }) { Text("Add") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }

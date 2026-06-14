@@ -11,6 +11,8 @@ enum class GoalMetric { MANUAL, TRADES, JOURNAL_ENTRIES, TASKS_COMPLETED }
 
 enum class TaskFrequency { ONCE, DAILY }
 
+enum class TaskCategory { TASK, ROUTINE }
+
 enum class PayoutStatus { PENDING, PAID }
 
 enum class Impact { LOW, MEDIUM, HIGH }

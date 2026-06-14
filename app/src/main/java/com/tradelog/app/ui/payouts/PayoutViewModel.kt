@@ -53,4 +53,13 @@ class PayoutEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
     fun save(onDone: () -> Unit) {
         viewModelScope.launch { repo.savePayout(_payout.value); onDone() }
     }
+
+    val canDelete: Boolean get() = _payout.value.id != 0L
+
+    fun delete(onDone: () -> Unit) {
+        viewModelScope.launch {
+            if (_payout.value.id != 0L) repo.deletePayout(_payout.value)
+            onDone()
+        }
+    }
 }

@@ -24,8 +24,13 @@ class TradeLogApp : Application() {
 
         appScope.launch {
             if (!prefs.getBoolean("seeded", false)) {
+                // Fresh install: full seed already includes v2 data.
                 Seeder.seed(repo)
-                prefs.edit().putBoolean("seeded", true).apply()
+                prefs.edit().putBoolean("seeded", true).putBoolean("seeded_v2", true).apply()
+            } else if (!prefs.getBoolean("seeded_v2", false)) {
+                // Upgrade from v1: add only the new v2 sample data.
+                Seeder.seedV2(repo)
+                prefs.edit().putBoolean("seeded_v2", true).apply()
             }
             val settings = repo.settings.settings.first()
             BriefingScheduler.reschedule(

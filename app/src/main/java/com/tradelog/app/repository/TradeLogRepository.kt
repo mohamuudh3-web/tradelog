@@ -3,7 +3,10 @@ package com.tradelog.app.repository
 import com.tradelog.app.data.SettingsStore
 import com.tradelog.app.data.db.AppDatabase
 import com.tradelog.app.data.entity.Account
+import com.tradelog.app.data.entity.Backtest
+import com.tradelog.app.data.entity.BacktestImage
 import com.tradelog.app.data.entity.EconomicEvent
+import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.Goal
 import com.tradelog.app.data.entity.GoalMetric
 import com.tradelog.app.data.entity.Impact
@@ -38,6 +41,8 @@ class TradeLogRepository(
     private val goalDao = db.goalDao()
     private val taskDao = db.taskDao()
     private val presetDao = db.positionPresetDao()
+    private val instrumentDao = db.instrumentDao()
+    private val backtestDao = db.backtestDao()
 
     // ---- Streams ----
     val trades: Flow<List<Trade>> = tradeDao.observeAll()
@@ -51,6 +56,9 @@ class TradeLogRepository(
     val allGoals: Flow<List<Goal>> = goalDao.observeAll()
     val tasks: Flow<List<TaskItem>> = taskDao.observeAll()
     val presets: Flow<List<PositionPreset>> = presetDao.observeAll()
+    val instruments: Flow<List<Instrument>> = instrumentDao.observeAll()
+    val backtests: Flow<List<Backtest>> = backtestDao.observeAll()
+    val backtestImages: Flow<List<BacktestImage>> = backtestDao.observeAllImages()
 
     // ---- Trades ----
     fun observeTrade(id: Long): Flow<Trade?> = tradeDao.observeById(id)
@@ -163,6 +171,31 @@ class TradeLogRepository(
     // ---- Position presets ----
     suspend fun savePreset(preset: PositionPreset): Long = presetDao.upsert(preset)
     suspend fun deletePreset(preset: PositionPreset) = presetDao.delete(preset)
+
+    // ---- Instruments (saved pairs) ----
+    suspend fun saveInstrument(instrument: Instrument): Long = instrumentDao.upsert(instrument)
+    suspend fun addInstrument(name: String, pipValuePerLot: Double) {
+        if (name.isNotBlank()) instrumentDao.insert(Instrument(name = name.trim().uppercase(), pipValuePerLot = pipValuePerLot))
+    }
+    suspend fun deleteInstrument(instrument: Instrument) = instrumentDao.delete(instrument)
+    suspend fun instrumentCount(): Int = instrumentDao.count()
+
+    // ---- Backtests ----
+    suspend fun getBacktest(id: Long): Backtest? = backtestDao.getById(id)
+    fun observeBacktestImages(id: Long): Flow<List<BacktestImage>> = backtestDao.observeImages(id)
+    suspend fun saveBacktest(backtest: Backtest): Long {
+        val stamped = if (backtest.createdAt == 0L) backtest.copy(createdAt = System.currentTimeMillis()) else backtest
+        return backtestDao.upsert(stamped)
+    }
+    suspend fun addBacktestImage(backtestId: Long, path: String) {
+        backtestDao.insertImage(BacktestImage(backtestId = backtestId, path = path))
+    }
+    suspend fun deleteBacktestImage(image: BacktestImage) = backtestDao.deleteImage(image)
+    suspend fun deleteBacktest(backtest: Backtest) {
+        backtestDao.imagesOf(backtest.id).forEach { com.tradelog.app.util.ImageStorage.delete(it.path) }
+        backtestDao.deleteImagesFor(backtest.id)
+        backtestDao.delete(backtest)
+    }
 
     // ---- Economic calendar ----
     suspend fun refreshCalendar(): Result<Int> = runCatching {

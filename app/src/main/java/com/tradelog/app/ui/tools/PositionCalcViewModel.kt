@@ -2,12 +2,15 @@ package com.tradelog.app.ui.tools
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tradelog.app.data.entity.Account
+import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.PositionPreset
 import com.tradelog.app.repository.TradeLogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -30,31 +33,37 @@ class PositionCalcViewModel(private val repo: TradeLogRepository) : ViewModel() 
     val presets: StateFlow<List<PositionPreset>> =
         repo.presets.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val instruments: StateFlow<List<Instrument>> =
+        repo.instruments.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val accounts: StateFlow<List<Account>> =
+        repo.accounts.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Reactive result — recomputes whenever the form changes. */
+    val result: StateFlow<CalcResult> =
+        _form.map { compute(it) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), compute(CalcForm()))
+
     fun update(transform: (CalcForm) -> CalcForm) = _form.update(transform)
 
-    val result: CalcResult
-        get() {
-            val f = _form.value
-            val balance = f.balance.toDoubleOrNull()
-            val risk = f.riskPct.toDoubleOrNull()
-            val stop = f.stopLoss.toDoubleOrNull()
-            val pip = f.pipValuePerLot.toDoubleOrNull()
-            if (balance == null || risk == null || stop == null || pip == null || stop <= 0 || pip <= 0) {
-                return CalcResult(0.0, 0.0, false)
-            }
-            val riskAmount = balance * (risk / 100.0)
-            val lots = riskAmount / (stop * pip)
-            return CalcResult(riskAmount, lots, true)
-        }
+    fun applyInstrument(instrument: Instrument) {
+        _form.update { it.copy(instrument = instrument.name, pipValuePerLot = instrument.pipValuePerLot.toString()) }
+    }
 
-    fun applyPreset(p: PositionPreset) {
-        _form.value = CalcForm(
-            instrument = p.instrument,
-            balance = p.balance.toString(),
-            riskPct = p.riskPercent.toString(),
-            stopLoss = p.stopLoss.toString(),
-            pipValuePerLot = p.pipValuePerLot.toString()
-        )
+    fun useAccountBalance(account: Account) {
+        _form.update { it.copy(balance = account.balance.toString()) }
+    }
+
+    private fun compute(f: CalcForm): CalcResult {
+        val balance = f.balance.toDoubleOrNull()
+        val risk = f.riskPct.toDoubleOrNull()
+        val stop = f.stopLoss.toDoubleOrNull()
+        val pip = f.pipValuePerLot.toDoubleOrNull()
+        if (balance == null || risk == null || stop == null || pip == null || stop <= 0 || pip <= 0 || balance <= 0) {
+            return CalcResult(0.0, 0.0, false)
+        }
+        val riskAmount = balance * (risk / 100.0)
+        val lots = riskAmount / (stop * pip)
+        return CalcResult(riskAmount, lots, true)
     }
 
     fun savePreset(name: String) {
@@ -72,6 +81,16 @@ class PositionCalcViewModel(private val repo: TradeLogRepository) : ViewModel() 
                 )
             )
         }
+    }
+
+    fun applyPreset(p: PositionPreset) {
+        _form.value = CalcForm(
+            instrument = p.instrument,
+            balance = if (p.balance == 0.0) "" else p.balance.toString(),
+            riskPct = p.riskPercent.toString(),
+            stopLoss = if (p.stopLoss == 0.0) "" else p.stopLoss.toString(),
+            pipValuePerLot = p.pipValuePerLot.toString()
+        )
     }
 
     fun deletePreset(p: PositionPreset) = viewModelScope.launch { repo.deletePreset(p) }

@@ -49,4 +49,13 @@ class AccountEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
         if (_account.value.name.isBlank()) return
         viewModelScope.launch { repo.saveAccount(_account.value); onDone() }
     }
+
+    val canDelete: Boolean get() = _account.value.id != 0L
+
+    fun delete(onDone: () -> Unit) {
+        viewModelScope.launch {
+            if (_account.value.id != 0L) repo.deleteAccount(_account.value)
+            onDone()
+        }
+    }
 }

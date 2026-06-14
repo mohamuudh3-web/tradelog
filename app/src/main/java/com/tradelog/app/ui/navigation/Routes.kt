@@ -29,6 +29,9 @@ object Routes {
     const val POSITION_CALC = "position_calc"
     const val CALENDAR = "calendar"
     const val SETTINGS = "settings"
+    const val INSTRUMENTS = "instruments"
+    const val BACKTESTS = "backtests"
+    const val BACKTEST_EDIT = "backtest_edit" // ?id=
 
     fun tradeEdit(id: Long = 0L) = "$TRADE_EDIT?id=$id"
     fun tradeDetail(id: Long) = "$TRADE_DETAIL/$id"
@@ -36,6 +39,7 @@ object Routes {
     fun accountEdit(id: Long = 0L) = "$ACCOUNT_EDIT?id=$id"
     fun noteEdit(id: Long = 0L) = "$NOTE_EDIT?id=$id"
     fun payoutEdit(id: Long = 0L) = "$PAYOUT_EDIT?id=$id"
+    fun backtestEdit(id: Long = 0L) = "$BACKTEST_EDIT?id=$id"
 }
 
 data class BottomDest(val route: String, val label: String, val icon: ImageVector)

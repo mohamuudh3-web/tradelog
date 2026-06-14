@@ -45,4 +45,13 @@ class NoteEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
         if (_note.value.title.isBlank()) return
         viewModelScope.launch { repo.saveNote(_note.value); onDone() }
     }
+
+    val canDelete: Boolean get() = _note.value.id != 0L
+
+    fun delete(onDone: () -> Unit) {
+        viewModelScope.launch {
+            if (_note.value.id != 0L) repo.deleteNote(_note.value)
+            onDone()
+        }
+    }
 }

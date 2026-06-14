@@ -9,7 +9,9 @@ import com.tradelog.app.data.entity.JournalEntry
 import com.tradelog.app.data.entity.NotebookNote
 import com.tradelog.app.data.entity.PayoutRecord
 import com.tradelog.app.data.entity.PayoutStatus
+import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.PositionPreset
+import com.tradelog.app.data.entity.TaskCategory
 import com.tradelog.app.data.entity.TaskFrequency
 import com.tradelog.app.data.entity.TaskItem
 import com.tradelog.app.data.entity.Trade
@@ -95,5 +97,37 @@ object Seeder {
 
         // Position preset
         repo.savePreset(PositionPreset(name = "FTMO EURUSD 1%", balance = 100_000.0, riskPercent = 1.0, stopLoss = 15.0, pipValuePerLot = 10.0, instrument = "EURUSD"))
+
+        seedV2(repo)
+    }
+
+    /** Incremental seed for features added after v1 (saved pairs, morning routine). Idempotent-guarded by caller. */
+    suspend fun seedV2(repo: TradeLogRepository) {
+        val now = System.currentTimeMillis()
+
+        // Saved instruments / pairs with typical pip/point value per 1.0 lot (USD-quoted approximations).
+        val pairs = listOf(
+            "EURUSD" to 10.0, "GBPUSD" to 10.0, "AUDUSD" to 10.0, "NZDUSD" to 10.0,
+            "USDJPY" to 9.0, "USDCAD" to 7.5, "USDCHF" to 11.0,
+            "GBPJPY" to 9.0, "EURJPY" to 9.0,
+            "XAUUSD" to 10.0, "XAGUSD" to 50.0,
+            "US30" to 1.0, "NAS100" to 1.0, "SPX500" to 1.0,
+            "BTCUSD" to 1.0
+        )
+        pairs.forEachIndexed { i, (name, pip) ->
+            repo.saveInstrument(Instrument(name = name, pipValuePerLot = pip, sortOrder = i))
+        }
+
+        // Morning routine checklist
+        listOf(
+            "Woke up early",
+            "Exercise / workout",
+            "Clean room",
+            "Meditate / breathe",
+            "Hydrate",
+            "Review trading plan"
+        ).forEachIndexed { i, t ->
+            repo.saveTask(TaskItem(title = t, frequency = TaskFrequency.DAILY, category = TaskCategory.ROUTINE, sortOrder = i, createdAt = now))
+        }
     }
 }

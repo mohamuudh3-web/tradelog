@@ -6,6 +6,7 @@ import com.tradelog.app.data.entity.GoalMetric
 import com.tradelog.app.data.entity.GoalType
 import com.tradelog.app.data.entity.Impact
 import com.tradelog.app.data.entity.PayoutStatus
+import com.tradelog.app.data.entity.TaskCategory
 import com.tradelog.app.data.entity.TaskFrequency
 import com.tradelog.app.data.entity.TradeResult
 
@@ -25,6 +26,9 @@ class Converters {
 
     @TypeConverter fun taskFreqTo(v: TaskFrequency): String = v.name
     @TypeConverter fun taskFreqFrom(v: String): TaskFrequency = TaskFrequency.valueOf(v)
+
+    @TypeConverter fun taskCategoryTo(v: TaskCategory): String = v.name
+    @TypeConverter fun taskCategoryFrom(v: String): TaskCategory = TaskCategory.valueOf(v)
 
     @TypeConverter fun payoutStatusTo(v: PayoutStatus): String = v.name
     @TypeConverter fun payoutStatusFrom(v: String): PayoutStatus = PayoutStatus.valueOf(v)

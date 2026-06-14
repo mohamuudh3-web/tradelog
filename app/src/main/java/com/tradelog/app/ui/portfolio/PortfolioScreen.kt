@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tradelog.app.di.appViewModel
+import com.tradelog.app.ui.common.ConfirmDeleteAction
 import com.tradelog.app.ui.common.DetailScaffold
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
@@ -91,7 +92,10 @@ fun AccountEditScreen(accountId: Long, onBack: () -> Unit) {
     DetailScaffold(
         title = if (accountId == 0L) "New account" else "Edit account",
         onBack = onBack,
-        actions = { IconButton(onClick = { vm.save(onBack) }) { Icon(Icons.Filled.Check, "Save") } }
+        actions = {
+            if (vm.canDelete) ConfirmDeleteAction("account") { vm.delete(onBack) }
+            IconButton(onClick = { vm.save(onBack) }) { Icon(Icons.Filled.Check, "Save") }
+        }
     ) { inner ->
         Column(
             Modifier.padding(inner).padding(16.dp).verticalScroll(rememberScrollState()),

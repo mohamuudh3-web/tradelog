@@ -7,6 +7,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
 import com.tradelog.app.repository.TradeLogRepository
 import com.tradelog.app.ui.analytics.AnalyticsViewModel
+import com.tradelog.app.ui.backtest.BacktestEditViewModel
+import com.tradelog.app.ui.backtest.BacktestListViewModel
 import com.tradelog.app.ui.calendar.CalendarViewModel
 import com.tradelog.app.ui.dashboard.DashboardViewModel
 import com.tradelog.app.ui.goals.GoalsViewModel
@@ -19,6 +21,7 @@ import com.tradelog.app.ui.payouts.PayoutViewModel
 import com.tradelog.app.ui.portfolio.AccountEditViewModel
 import com.tradelog.app.ui.portfolio.PortfolioViewModel
 import com.tradelog.app.ui.settings.SettingsViewModel
+import com.tradelog.app.ui.tools.InstrumentViewModel
 import com.tradelog.app.ui.tools.PositionCalcViewModel
 import com.tradelog.app.ui.trades.TradeDetailViewModel
 import com.tradelog.app.ui.trades.TradeEditViewModel
@@ -43,6 +46,9 @@ class AppViewModelFactory(private val repo: TradeLogRepository) : ViewModelProvi
             modelClass.isAssignableFrom(PositionCalcViewModel::class.java) -> PositionCalcViewModel(repo)
             modelClass.isAssignableFrom(CalendarViewModel::class.java) -> CalendarViewModel(repo)
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> SettingsViewModel(repo)
+            modelClass.isAssignableFrom(InstrumentViewModel::class.java) -> InstrumentViewModel(repo)
+            modelClass.isAssignableFrom(BacktestListViewModel::class.java) -> BacktestListViewModel(repo)
+            modelClass.isAssignableFrom(BacktestEditViewModel::class.java) -> BacktestEditViewModel(repo)
             else -> throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
         }
         return vm as T

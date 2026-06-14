@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -24,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tradelog.app.di.appViewModel
@@ -40,7 +40,9 @@ fun PositionCalcScreen(onBack: () -> Unit) {
     val vm: PositionCalcViewModel = appViewModel()
     val form by vm.form.collectAsStateWithLifecycle()
     val presets by vm.presets.collectAsStateWithLifecycle()
-    val result = vm.result
+    val instruments by vm.instruments.collectAsStateWithLifecycle()
+    val accounts by vm.accounts.collectAsStateWithLifecycle()
+    val result by vm.result.collectAsStateWithLifecycle()
     var showSave by remember { mutableStateOf(false) }
 
     DetailScaffold(title = "Position calculator", onBack = onBack) { inner ->
@@ -48,8 +50,35 @@ fun PositionCalcScreen(onBack: () -> Unit) {
             Modifier.padding(inner).padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Saved pairs (suggested first)
+            if (instruments.isNotEmpty()) {
+                Text("Pair", style = MaterialTheme.typography.labelLarge)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(instruments, key = { it.id }) { ins ->
+                        FilterChip(
+                            selected = form.instrument.equals(ins.name, ignoreCase = true),
+                            onClick = { vm.applyInstrument(ins) },
+                            label = { Text(ins.name) }
+                        )
+                    }
+                }
+            }
             FormField(form.instrument, { v -> vm.update { it.copy(instrument = v) } }, "Instrument")
-            FormField(form.balance, { v -> vm.update { it.copy(balance = v) } }, "Account balance", keyboardType = KeyboardType.Number)
+
+            // Account balance source
+            if (accounts.isNotEmpty()) {
+                Text("Use balance from account", style = MaterialTheme.typography.labelLarge)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(accounts, key = { it.id }) { acc ->
+                        AssistChip(
+                            onClick = { vm.useAccountBalance(acc) },
+                            label = { Text("${acc.name} · ${Format.money(acc.balance, acc.currency)}") }
+                        )
+                    }
+                }
+            }
+            FormField(form.balance, { v -> vm.update { it.copy(balance = v) } }, "Account balance (or enter any amount)", keyboardType = KeyboardType.Number)
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FormField(form.riskPct, { v -> vm.update { it.copy(riskPct = v) } }, "Risk %", Modifier.weight(1f), keyboardType = KeyboardType.Number)
                 FormField(form.stopLoss, { v -> vm.update { it.copy(stopLoss = v) } }, "Stop (pips/pts)", Modifier.weight(1f), keyboardType = KeyboardType.Number)
@@ -61,7 +90,11 @@ fun PositionCalcScreen(onBack: () -> Unit) {
                 StatTile("Lot size", if (result.valid) String.format("%.2f", result.lotSize) else "—", Modifier.weight(1f), accent = Teal)
             }
             if (!result.valid) {
-                Text("Enter balance, risk %, stop and pip value to calculate.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                Text(
+                    "Enter balance, risk %, stop and pip value to calculate.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             OutlinedButton(onClick = { showSave = true }, modifier = Modifier.fillMaxWidth()) { Text("Save as preset") }

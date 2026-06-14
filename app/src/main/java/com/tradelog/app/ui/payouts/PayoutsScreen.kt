@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tradelog.app.data.entity.PayoutStatus
 import com.tradelog.app.di.appViewModel
+import com.tradelog.app.ui.common.ConfirmDeleteAction
 import com.tradelog.app.ui.common.DetailScaffold
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
@@ -92,7 +93,10 @@ fun PayoutEditScreen(payoutId: Long, onBack: () -> Unit) {
     DetailScaffold(
         title = if (payoutId == 0L) "New payout" else "Edit payout",
         onBack = onBack,
-        actions = { IconButton(onClick = { vm.save(onBack) }) { Icon(Icons.Filled.Check, "Save") } }
+        actions = {
+            if (vm.canDelete) ConfirmDeleteAction("payout") { vm.delete(onBack) }
+            IconButton(onClick = { vm.save(onBack) }) { Icon(Icons.Filled.Check, "Save") }
+        }
     ) { inner ->
         Column(
             Modifier.padding(inner).padding(16.dp).verticalScroll(rememberScrollState()),

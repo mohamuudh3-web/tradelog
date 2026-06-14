@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -46,6 +48,7 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
     val form by vm.form.collectAsStateWithLifecycle()
     val accounts by vm.accounts.collectAsStateWithLifecycle()
     val tags by vm.setupTags.collectAsStateWithLifecycle()
+    val instruments by vm.instruments.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -74,6 +77,17 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             FormField(form.instrument, { v -> vm.update { it.copy(instrument = v) } }, "Instrument (e.g. EURUSD)")
+            if (instruments.isNotEmpty()) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    items(instruments, key = { it.id }) { ins ->
+                        FilterChip(
+                            selected = form.instrument.equals(ins.name, ignoreCase = true),
+                            onClick = { vm.update { it.copy(instrument = ins.name) } },
+                            label = { Text(ins.name) }
+                        )
+                    }
+                }
+            }
 
             DropdownField(
                 label = "Account",

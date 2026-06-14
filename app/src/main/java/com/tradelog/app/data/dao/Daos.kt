@@ -8,7 +8,10 @@ import androidx.room.Query
 import androidx.room.Update
 import androidx.room.Upsert
 import com.tradelog.app.data.entity.Account
+import com.tradelog.app.data.entity.Backtest
+import com.tradelog.app.data.entity.BacktestImage
 import com.tradelog.app.data.entity.EconomicEvent
+import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.Goal
 import com.tradelog.app.data.entity.JournalEntry
 import com.tradelog.app.data.entity.NotebookNote
@@ -189,6 +192,57 @@ interface TaskDao {
 
     @Query("SELECT COUNT(*) FROM task_completions WHERE date BETWEEN :start AND :end")
     suspend fun countCompletionsBetween(start: String, end: String): Int
+}
+
+@Dao
+interface InstrumentDao {
+    @Query("SELECT * FROM instruments ORDER BY sortOrder ASC, name ASC")
+    fun observeAll(): Flow<List<Instrument>>
+
+    @Query("SELECT COUNT(*) FROM instruments")
+    suspend fun count(): Int
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(instrument: Instrument): Long
+
+    @Upsert
+    suspend fun upsert(instrument: Instrument): Long
+
+    @Delete
+    suspend fun delete(instrument: Instrument)
+}
+
+@Dao
+interface BacktestDao {
+    @Query("SELECT * FROM backtests ORDER BY dateMillis DESC, id DESC")
+    fun observeAll(): Flow<List<Backtest>>
+
+    @Query("SELECT * FROM backtests WHERE id = :id")
+    suspend fun getById(id: Long): Backtest?
+
+    @Upsert
+    suspend fun upsert(backtest: Backtest): Long
+
+    @Delete
+    suspend fun delete(backtest: Backtest)
+
+    @Query("SELECT * FROM backtest_images WHERE backtestId = :backtestId ORDER BY sortOrder ASC, id ASC")
+    fun observeImages(backtestId: Long): Flow<List<BacktestImage>>
+
+    @Query("SELECT * FROM backtest_images WHERE backtestId = :backtestId ORDER BY sortOrder ASC, id ASC")
+    suspend fun imagesOf(backtestId: Long): List<BacktestImage>
+
+    @Query("SELECT * FROM backtest_images ORDER BY id DESC")
+    fun observeAllImages(): Flow<List<BacktestImage>>
+
+    @Insert
+    suspend fun insertImage(image: BacktestImage): Long
+
+    @Delete
+    suspend fun deleteImage(image: BacktestImage)
+
+    @Query("DELETE FROM backtest_images WHERE backtestId = :backtestId")
+    suspend fun deleteImagesFor(backtestId: Long)
 }
 
 @Dao

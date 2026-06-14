@@ -5,8 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.tradelog.app.data.dao.AccountDao
+import com.tradelog.app.data.dao.BacktestDao
 import com.tradelog.app.data.dao.EconomicEventDao
+import com.tradelog.app.data.dao.InstrumentDao
 import com.tradelog.app.data.dao.GoalDao
 import com.tradelog.app.data.dao.JournalDao
 import com.tradelog.app.data.dao.NotebookDao
@@ -16,7 +20,10 @@ import com.tradelog.app.data.dao.SetupTagDao
 import com.tradelog.app.data.dao.TaskDao
 import com.tradelog.app.data.dao.TradeDao
 import com.tradelog.app.data.entity.Account
+import com.tradelog.app.data.entity.Backtest
+import com.tradelog.app.data.entity.BacktestImage
 import com.tradelog.app.data.entity.EconomicEvent
+import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.Goal
 import com.tradelog.app.data.entity.JournalEntry
 import com.tradelog.app.data.entity.NotebookNote
@@ -39,9 +46,12 @@ import com.tradelog.app.data.entity.Trade
         Goal::class,
         TaskItem::class,
         TaskCompletion::class,
-        PositionPreset::class
+        PositionPreset::class,
+        Instrument::class,
+        Backtest::class,
+        BacktestImage::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -56,9 +66,35 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun goalDao(): GoalDao
     abstract fun taskDao(): TaskDao
     abstract fun positionPresetDao(): PositionPresetDao
+    abstract fun instrumentDao(): InstrumentDao
+    abstract fun backtestDao(): BacktestDao
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
+
+        /** v1 -> v2: morning routine category, saved instruments, backtesting journal. */
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN category TEXT NOT NULL DEFAULT 'TASK'")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS instruments (" +
+                        "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                        "name TEXT NOT NULL, pipValuePerLot REAL NOT NULL, sortOrder INTEGER NOT NULL)"
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_instruments_name ON instruments(name)")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS backtests (" +
+                        "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                        "title TEXT NOT NULL, instrument TEXT NOT NULL, dateMillis INTEGER NOT NULL, " +
+                        "bias TEXT NOT NULL, notes TEXT NOT NULL, createdAt INTEGER NOT NULL)"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS backtest_images (" +
+                        "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                        "backtestId INTEGER NOT NULL, path TEXT NOT NULL, sortOrder INTEGER NOT NULL)"
+                )
+            }
+        }
 
         fun get(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
@@ -66,7 +102,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "tradelog.db"
-                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2)
+                    .fallbackToDestructiveMigration()
+                    .build().also { INSTANCE = it }
             }
     }
 }

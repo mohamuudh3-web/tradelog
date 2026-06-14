@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tradelog.app.data.entity.Account
 import com.tradelog.app.data.entity.Direction
+import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.SetupTag
 import com.tradelog.app.data.entity.Trade
 import com.tradelog.app.data.entity.TradeResult
@@ -45,6 +46,8 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
         repo.accounts.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val setupTags: StateFlow<List<SetupTag>> =
         repo.setupTags.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val instruments: StateFlow<List<Instrument>> =
+        repo.instruments.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun load(id: Long) {
         if (loaded) return

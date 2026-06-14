@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CandlestickChart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,6 +40,15 @@ fun ToolsScreen(onNavigate: (String) -> Unit, onBack: () -> Unit) {
                     Column(Modifier.padding(start = 12.dp)) {
                         Text("Economic calendar", style = MaterialTheme.typography.titleMedium)
                         Text("This week's events, cached for offline", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            SectionCard(modifier = Modifier.clickable { onNavigate(Routes.INSTRUMENTS) }) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.CandlestickChart, null, tint = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.padding(start = 12.dp)) {
+                        Text("Pairs / instruments", style = MaterialTheme.typography.titleMedium)
+                        Text("Save symbols & pip values to reuse everywhere", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
