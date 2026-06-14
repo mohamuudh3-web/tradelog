@@ -94,17 +94,25 @@ fun PsychologyChips(selected: Set<String>, onToggle: (String) -> Unit) {
 @Composable
 fun ImageUrlField(onAdd: (String) -> Unit, label: String = "Paste image URL") {
     var url by remember { mutableStateOf("") }
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
-            value = url,
-            onValueChange = { url = it },
-            label = { Text(label) },
-            singleLine = true,
-            modifier = Modifier.weight(1f)
-        )
-        OutlinedButton(onClick = { if (url.isNotBlank()) { onAdd(url.trim()); url = "" } }, modifier = Modifier.padding(start = 8.dp)) {
-            Text("Apply")
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = url,
+                onValueChange = { url = it },
+                label = { Text(label) },
+                singleLine = true,
+                modifier = Modifier.weight(1f)
+            )
+            OutlinedButton(onClick = { if (url.isNotBlank()) { onAdd(url.trim()); url = "" } }, modifier = Modifier.padding(start = 8.dp)) {
+                Text("Apply")
+            }
         }
+        Text(
+            "Use a direct image link ending in .png / .jpg / .webp (long-press an image on the web → Copy image address).",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 

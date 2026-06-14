@@ -58,6 +58,7 @@ import com.tradelog.app.ui.common.FormField
 import com.tradelog.app.ui.common.ImageUrlField
 import com.tradelog.app.ui.common.PsychologyChips
 import com.tradelog.app.ui.common.SectionCard
+import com.tradelog.app.ui.common.ZoomableAsyncImage
 import com.tradelog.app.ui.common.resultColor
 import com.tradelog.app.util.ImageStorage
 import kotlinx.coroutines.launch
@@ -168,13 +169,13 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
 
                 form.screenshotUri?.let { path ->
                     Box(Modifier.fillMaxWidth().height(180.dp).padding(top = 8.dp)) {
-                        AsyncImage(File(path), null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(10.dp)))
+                        ZoomableAsyncImage(File(path), Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(10.dp)))
                         RemoveBadge(Modifier.align(Alignment.TopEnd)) { vm.update { it.copy(screenshotUri = null) } }
                     }
                 }
                 form.imageUrls.forEach { url ->
                     Box(Modifier.fillMaxWidth().height(180.dp).padding(top = 8.dp)) {
-                        AsyncImage(url, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(10.dp)))
+                        ZoomableAsyncImage(url, Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(10.dp)))
                         RemoveBadge(Modifier.align(Alignment.TopEnd)) { vm.removeImageUrl(url) }
                     }
                 }
