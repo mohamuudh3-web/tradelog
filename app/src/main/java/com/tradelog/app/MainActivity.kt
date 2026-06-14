@@ -1,14 +1,15 @@
 package com.tradelog.app
 
-import android.Manifest
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.tradelog.app.ui.navigation.AppRoot
+import com.tradelog.app.ui.onboarding.OnboardingScreen
 import com.tradelog.app.ui.theme.TradeLogTheme
 import com.tradelog.app.work.NotificationHelper
 
@@ -16,22 +17,25 @@ class MainActivity : ComponentActivity() {
 
     private val openCalendar = mutableStateOf(false)
 
-    private val notifPermLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         openCalendar.value = intent?.getBooleanExtra(NotificationHelper.EXTRA_OPEN_CALENDAR, false) == true
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        val prefs = getSharedPreferences("tradelog_prefs", MODE_PRIVATE)
 
         setContent {
             TradeLogTheme {
-                AppRoot(openCalendar = openCalendar.value, onCalendarConsumed = { openCalendar.value = false })
+                var onboarded by remember { mutableStateOf(prefs.getBoolean("onboarded", false)) }
+                if (!onboarded) {
+                    OnboardingScreen(onFinish = {
+                        prefs.edit().putBoolean("onboarded", true).apply()
+                        onboarded = true
+                    })
+                } else {
+                    AppRoot(openCalendar = openCalendar.value, onCalendarConsumed = { openCalendar.value = false })
+                }
             }
         }
     }

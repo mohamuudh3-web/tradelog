@@ -17,6 +17,7 @@ import com.tradelog.app.ui.journal.DailyEntryViewModel
 import com.tradelog.app.ui.journal.JournalViewModel
 import com.tradelog.app.ui.notebook.NoteEditViewModel
 import com.tradelog.app.ui.notebook.NotebookViewModel
+import com.tradelog.app.ui.onboarding.OnboardingViewModel
 import com.tradelog.app.ui.payouts.PayoutEditViewModel
 import com.tradelog.app.ui.payouts.PayoutViewModel
 import com.tradelog.app.ui.portfolio.AccountEditViewModel
@@ -51,6 +52,7 @@ class AppViewModelFactory(private val repo: TradeLogRepository) : ViewModelProvi
             modelClass.isAssignableFrom(BacktestListViewModel::class.java) -> BacktestListViewModel(repo)
             modelClass.isAssignableFrom(BacktestEditViewModel::class.java) -> BacktestEditViewModel(repo)
             modelClass.isAssignableFrom(BacktestStatsViewModel::class.java) -> BacktestStatsViewModel(repo)
+            modelClass.isAssignableFrom(OnboardingViewModel::class.java) -> OnboardingViewModel(repo)
             else -> throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
         }
         return vm as T
