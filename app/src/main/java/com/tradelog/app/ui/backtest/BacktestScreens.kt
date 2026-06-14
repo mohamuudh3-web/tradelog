@@ -67,6 +67,7 @@ import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
 import com.tradelog.app.ui.common.ImageUrlField
 import com.tradelog.app.ui.common.Pill
+import com.tradelog.app.ui.common.SectionCard
 import com.tradelog.app.ui.common.ZoomableAsyncImage
 import com.tradelog.app.ui.theme.Loss
 import com.tradelog.app.ui.theme.Neutral
