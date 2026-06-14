@@ -2,6 +2,8 @@ package com.tradelog.app.ui.goals
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -226,6 +228,7 @@ private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, TaskFrequency) 
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AddRoutineDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
     var title by remember { mutableStateOf("") }
