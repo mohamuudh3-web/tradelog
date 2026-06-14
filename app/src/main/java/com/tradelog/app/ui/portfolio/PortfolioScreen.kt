@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -114,6 +115,35 @@ fun AccountEditScreen(accountId: Long, onBack: () -> Unit) {
                 Text("Prop firm account")
                 Switch(checked = account.isPropFirm, onCheckedChange = { c -> vm.update { it.copy(isPropFirm = c) } })
             }
+
+            if (account.isPropFirm) {
+                SectionCard(title = "Prop firm challenge") {
+                    Text("Phase", style = MaterialTheme.typography.labelMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Phase 1", "Phase 2", "Funded").forEach { p ->
+                            FilterChip(account.challengePhase == p, { vm.update { it.copy(challengePhase = if (it.challengePhase == p) "" else p) } }, { Text(p) })
+                        }
+                    }
+                    Text("Status", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Active", "Funded", "Breached", "Inactive").forEach { s ->
+                            FilterChip(account.status == s, { vm.update { it.copy(status = if (it.status == s) "" else s) } }, { Text(s) })
+                        }
+                    }
+                    FormField(account.website, { v -> vm.update { it.copy(website = v) } }, "Website", Modifier.padding(top = 8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 8.dp)) {
+                        FormField(numOrEmpty(account.startingBalance), { v -> vm.update { it.copy(startingBalance = v.toDoubleOrNull()) } }, "Start bal", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+                        FormField(numOrEmpty(account.splitPercent), { v -> vm.update { it.copy(splitPercent = v.toDoubleOrNull()) } }, "Split %", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 8.dp)) {
+                        FormField(numOrEmpty(account.drawdownPercent), { v -> vm.update { it.copy(drawdownPercent = v.toDoubleOrNull()) } }, "Drawdown %", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+                        FormField(numOrEmpty(account.targetPercent), { v -> vm.update { it.copy(targetPercent = v.toDoubleOrNull()) } }, "Target %", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+                    }
+                }
+            }
         }
     }
 }
+
+private fun numOrEmpty(v: Double?): String =
+    v?.let { if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString() } ?: ""

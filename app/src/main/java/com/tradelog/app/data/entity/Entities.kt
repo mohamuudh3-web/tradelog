@@ -13,6 +13,14 @@ data class Account(
     val balance: Double = 0.0,
     val currency: String = "USD",
     val isPropFirm: Boolean = false,
+    // RyzeLog prop-firm challenge fields
+    @ColumnInfo(defaultValue = "") val challengePhase: String = "",
+    @ColumnInfo(defaultValue = "") val status: String = "",
+    @ColumnInfo(defaultValue = "") val website: String = "",
+    val startingBalance: Double? = null,
+    val splitPercent: Double? = null,
+    val drawdownPercent: Double? = null,
+    val targetPercent: Double? = null,
     val createdAt: Long = 0L
 )
 
@@ -58,6 +66,20 @@ data class JournalEntry(
     val reflection: String = "",
     val mood: Int = 3,
     val discipline: Int = 3,
+    // RyzeLog-style daily battle plan
+    @ColumnInfo(defaultValue = "") val title: String = "",
+    @ColumnInfo(defaultValue = "") val gratitude: String = "",
+    @ColumnInfo(defaultValue = "") val battlePlan: String = "",
+    @ColumnInfo(defaultValue = "") val affirmation: String = "",
+    @ColumnInfo(defaultValue = "") val tags: String = "",
+    @ColumnInfo(defaultValue = "") val moodLabel: String = "",
+    /** Newline-separated focus tasks for the day. */
+    @ColumnInfo(defaultValue = "") val focusTasks: String = "",
+    val accountBalance: Double? = null,
+    val tradesTarget: Int? = null,
+    val pipsTarget: Double? = null,
+    val riskPercent: Double? = null,
+    val riskAmount: Double? = null,
     val createdAt: Long = 0L
 )
 

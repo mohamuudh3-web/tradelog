@@ -54,7 +54,7 @@ import com.tradelog.app.data.entity.Trade
         BacktestImage::class,
         ChecklistRule::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -138,13 +138,38 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v5 -> v6: daily-journal battle-plan fields. */
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN title TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN gratitude TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN battlePlan TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN affirmation TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN tags TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN moodLabel TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN focusTasks TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN accountBalance REAL")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN tradesTarget INTEGER")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN pipsTarget REAL")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN riskPercent REAL")
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN riskAmount REAL")
+                db.execSQL("ALTER TABLE accounts ADD COLUMN challengePhase TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE accounts ADD COLUMN status TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE accounts ADD COLUMN website TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE accounts ADD COLUMN startingBalance REAL")
+                db.execSQL("ALTER TABLE accounts ADD COLUMN splitPercent REAL")
+                db.execSQL("ALTER TABLE accounts ADD COLUMN drawdownPercent REAL")
+                db.execSQL("ALTER TABLE accounts ADD COLUMN targetPercent REAL")
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "tradelog.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .fallbackToDestructiveMigration()
                     .build().also { INSTANCE = it }
             }

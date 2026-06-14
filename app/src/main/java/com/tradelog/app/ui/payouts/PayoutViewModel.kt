@@ -17,7 +17,11 @@ import kotlinx.coroutines.launch
 data class PayoutSummary(
     val totalPaid: Double = 0.0,
     val pending: Double = 0.0,
-    val count: Int = 0
+    val count: Int = 0,
+    val average: Double = 0.0,
+    val largest: Double = 0.0,
+    val topFirm: String = "—",
+    val byFirm: List<Pair<String, Double>> = emptyList()
 )
 
 class PayoutViewModel(private val repo: TradeLogRepository) : ViewModel() {
@@ -26,10 +30,18 @@ class PayoutViewModel(private val repo: TradeLogRepository) : ViewModel() {
         repo.payouts.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val summary: StateFlow<PayoutSummary> = repo.payouts.map { list ->
+        val paid = list.filter { it.status == PayoutStatus.PAID }
+        val byFirm = paid.groupBy { it.accountName.ifBlank { "—" } }
+            .map { (firm, items) -> firm to items.sumOf { it.amount } }
+            .sortedByDescending { it.second }
         PayoutSummary(
-            totalPaid = list.filter { it.status == PayoutStatus.PAID }.sumOf { it.amount },
+            totalPaid = paid.sumOf { it.amount },
             pending = list.filter { it.status == PayoutStatus.PENDING }.sumOf { it.amount },
-            count = list.size
+            count = list.size,
+            average = if (paid.isNotEmpty()) paid.sumOf { it.amount } / paid.size else 0.0,
+            largest = paid.maxOfOrNull { it.amount } ?: 0.0,
+            topFirm = byFirm.firstOrNull()?.first ?: "—",
+            byFirm = byFirm
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PayoutSummary())
 

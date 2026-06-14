@@ -59,8 +59,27 @@ fun PayoutsScreen(onAdd: () -> Unit, onEdit: (Long) -> Unit, onBack: () -> Unit)
         ) {
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatTile("Total paid", Format.money(summary.totalPaid), Modifier.weight(1f), accent = Win)
+                    StatTile("Lifetime paid", Format.money(summary.totalPaid), Modifier.weight(1f), accent = Win)
                     StatTile("Pending", Format.money(summary.pending), Modifier.weight(1f), accent = Amber)
+                }
+            }
+            item {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    StatTile("Average", Format.money(summary.average), Modifier.weight(1f))
+                    StatTile("Largest", Format.money(summary.largest), Modifier.weight(1f), accent = Win)
+                    StatTile("Payouts", summary.count.toString(), Modifier.weight(1f))
+                }
+            }
+            if (summary.byFirm.isNotEmpty()) {
+                item {
+                    SectionCard(title = "Payouts by firm · top: ${summary.topFirm}") {
+                        summary.byFirm.forEach { (firm, amt) ->
+                            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(firm, style = MaterialTheme.typography.bodyMedium)
+                                Text(Format.money(amt), style = MaterialTheme.typography.bodyMedium, color = Win)
+                            }
+                        }
+                    }
                 }
             }
             if (payouts.isEmpty()) {

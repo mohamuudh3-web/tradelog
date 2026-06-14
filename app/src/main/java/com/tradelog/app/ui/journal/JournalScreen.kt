@@ -31,6 +31,7 @@ import com.tradelog.app.di.appViewModel
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.Pill
 import com.tradelog.app.ui.common.SectionCard
+import com.tradelog.app.ui.common.StatTile
 import com.tradelog.app.ui.common.SwipeToDelete
 import com.tradelog.app.ui.common.TopLevelScaffold
 import com.tradelog.app.ui.common.resultColor
@@ -48,6 +49,7 @@ fun JournalScreen(
     val vm: JournalViewModel = appViewModel()
     val trades by vm.trades.collectAsStateWithLifecycle()
     val entries by vm.dailyEntries.collectAsStateWithLifecycle()
+    val dailyStats by vm.dailyStats.collectAsStateWithLifecycle()
     var tab by remember { mutableIntStateOf(0) }
 
     TopLevelScaffold(
@@ -98,11 +100,16 @@ fun JournalScreen(
                     }
                 }
             } else {
+                Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    StatTile("Entries", dailyStats.total.toString(), Modifier.weight(1f))
+                    StatTile("This week", dailyStats.thisWeek.toString(), Modifier.weight(1f))
+                    StatTile("Streak", "${dailyStats.streak}d", Modifier.weight(1f), accent = Teal)
+                }
                 if (entries.isEmpty()) {
                     EmptyState("No daily entries yet.")
                 } else {
                     LazyColumn(
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(entries, key = { it.id }) { e ->
