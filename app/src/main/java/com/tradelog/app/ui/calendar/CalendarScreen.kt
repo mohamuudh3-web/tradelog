@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,7 +38,33 @@ import com.tradelog.app.data.entity.Impact
 import com.tradelog.app.ui.common.DetailScaffold
 import com.tradelog.app.ui.common.impactColor
 
-private val MYFX_CURRENCIES = listOf("AUD", "CAD", "CHF", "CNY", "EUR", "GBP", "JPY", "NZD", "USD")
+val MYFX_CURRENCIES = listOf("AUD", "CAD", "CHF", "CNY", "EUR", "GBP", "JPY", "NZD", "USD")
+
+/** Reusable myfxbook calendar widget. Recreated (reloaded) whenever filters or reloadKey change. */
+@Composable
+fun MyfxbookCalendar(
+    impacts: Set<Impact>,
+    currencies: Set<String>,
+    reloadKey: Int = 0,
+    modifier: Modifier = Modifier
+) {
+    val url = buildWidgetUrl(impacts, currencies)
+    key(url, reloadKey) {
+        AndroidView(
+            modifier = modifier,
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    webViewClient = WebViewClient()
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.loadWithOverviewMode = true
+                    settings.useWideViewPort = true
+                    loadUrl(url)
+                }
+            }
+        )
+    }
+}
 
 /** Myfxbook impact codes: 1 = low, 2 = medium, 3 = high. */
 private fun buildWidgetUrl(impacts: Set<Impact>, currencies: Set<String>): String {
@@ -57,8 +84,6 @@ fun CalendarScreen(onBack: () -> Unit) {
     var reloadKey by remember { mutableStateOf(0) }
     var showFilter by remember { mutableStateOf(false) }
 
-    val url = buildWidgetUrl(impacts, currencies)
-
     DetailScaffold(
         title = "Economic calendar",
         onBack = onBack,
@@ -74,27 +99,7 @@ fun CalendarScreen(onBack: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { ctx ->
-                    WebView(ctx).apply {
-                        webViewClient = WebViewClient()
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
-                        settings.loadWithOverviewMode = true
-                        settings.useWideViewPort = true
-                        tag = "$url#$reloadKey"
-                        loadUrl(url)
-                    }
-                },
-                update = { wv ->
-                    val key = "$url#$reloadKey"
-                    if (wv.tag != key) {
-                        wv.tag = key
-                        wv.loadUrl(url)
-                    }
-                }
-            )
+            MyfxbookCalendar(impacts, currencies, reloadKey, Modifier.fillMaxSize())
         }
     }
 

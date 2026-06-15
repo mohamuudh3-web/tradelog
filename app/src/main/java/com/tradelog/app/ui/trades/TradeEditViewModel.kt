@@ -110,6 +110,21 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
     fun save(onDone: () -> Unit) {
         val f = _form.value
         if (f.instrument.isBlank()) return
+        // Normalize sign to the result: WIN = positive, LOSS = negative.
+        val pnlMag = kotlin.math.abs(f.pnl.toDoubleOrNull() ?: 0.0)
+        val rMag = f.rMultiple.toDoubleOrNull()?.let { kotlin.math.abs(it) }
+        val signedPnl = when (f.result) {
+            TradeResult.WIN -> pnlMag
+            TradeResult.LOSS -> -pnlMag
+            TradeResult.BREAKEVEN -> 0.0
+        }
+        val signedR = rMag?.let {
+            when (f.result) {
+                TradeResult.WIN -> it
+                TradeResult.LOSS -> -it
+                TradeResult.BREAKEVEN -> 0.0
+            }
+        }
         viewModelScope.launch {
             repo.saveTrade(
                 Trade(
@@ -121,9 +136,9 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
                     exitPrice = f.exit.toDoubleOrNull(),
                     lotSize = f.lot.toDoubleOrNull() ?: 0.0,
                     riskPercent = f.riskPct.toDoubleOrNull(),
-                    rMultiple = f.rMultiple.toDoubleOrNull(),
+                    rMultiple = signedR,
                     result = f.result,
-                    pnl = f.pnl.toDoubleOrNull() ?: 0.0,
+                    pnl = signedPnl,
                     setupTag = f.setupTag.trim().ifBlank { null },
                     session = f.session.trim(),
                     slPips = f.slPips.toDoubleOrNull(),

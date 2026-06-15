@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,7 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tradelog.app.data.entity.Impact
 import com.tradelog.app.di.appViewModel
+import com.tradelog.app.ui.calendar.MyfxbookCalendar
 import com.tradelog.app.ui.common.Pill
 import com.tradelog.app.ui.common.ProgressRow
 import com.tradelog.app.ui.common.SectionCard
@@ -55,7 +58,6 @@ fun DashboardScreen(
 ) {
     val vm: DashboardViewModel = appViewModel()
     val state by vm.state.collectAsStateWithLifecycle()
-    val events by vm.upcomingEvents.collectAsStateWithLifecycle()
     var menuOpen by remember { mutableStateOf(false) }
 
     val quickLinks = listOf(
@@ -176,26 +178,13 @@ fun DashboardScreen(
             }
 
             item {
-                SectionCard(title = "Economic calendar", modifier = Modifier.clickable { onNavigate(Routes.CALENDAR) }) {
-                    if (events.isEmpty()) {
-                        Text("No upcoming events cached. Tap to open the calendar.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                    } else {
-                        events.forEach { e ->
-                            Row(
-                                Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(color = impactColor(e.impact), shape = RoundedCornerShape(2.dp)) {
-                                    androidx.compose.foundation.layout.Box(Modifier.size(width = 4.dp, height = 34.dp))
-                                }
-                                Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                                    Text(e.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text("${e.country} · ${DateUtils.formatEpochDateTime(e.dateTimeUtc)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                Pill(e.impact.name, impactColor(e.impact))
-                            }
-                        }
-                    }
+                SectionCard(title = "Economic calendar · myfxbook") {
+                    MyfxbookCalendar(
+                        impacts = setOf(Impact.MEDIUM, Impact.HIGH),
+                        currencies = emptySet(),
+                        modifier = Modifier.fillMaxWidth().height(440.dp)
+                    )
+                    TextButton(onClick = { onNavigate(Routes.CALENDAR) }) { Text("Open full calendar →") }
                 }
             }
 
