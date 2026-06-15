@@ -75,6 +75,9 @@ interface JournalDao {
     @Query("SELECT * FROM journal_entries WHERE date = :date LIMIT 1")
     suspend fun getByDate(date: String): JournalEntry?
 
+    @Query("SELECT * FROM journal_entries WHERE id = :id")
+    suspend fun getById(id: Long): JournalEntry?
+
     @Query("SELECT * FROM journal_entries WHERE date = :date LIMIT 1")
     fun observeByDate(date: String): Flow<JournalEntry?>
 

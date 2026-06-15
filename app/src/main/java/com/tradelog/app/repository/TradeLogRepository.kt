@@ -20,10 +20,13 @@ import com.tradelog.app.data.entity.SetupTag
 import com.tradelog.app.data.entity.TaskCompletion
 import com.tradelog.app.data.entity.TaskFrequency
 import com.tradelog.app.data.entity.TaskItem
+import com.tradelog.app.data.entity.SyncMeta
 import com.tradelog.app.data.entity.Trade
 import com.tradelog.app.network.FFEvent
 import com.tradelog.app.network.ForexFactoryApi
+import com.tradelog.app.sync.SyncTables
 import com.tradelog.app.util.DateUtils
+import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import java.time.OffsetDateTime
 import kotlin.math.max
@@ -47,6 +50,31 @@ class TradeLogRepository(
     private val backtestDao = db.backtestDao()
     private val checklistRuleDao = db.checklistRuleDao()
     private val countdownDao = db.countdownDao()
+    private val syncMetaDao = db.syncMetaDao()
+
+    // ---- Cloud-sync bookkeeping ----
+    /** Mark a local row as changed so the next sync pushes it to the cloud. */
+    private suspend fun touchSync(table: String, localId: Long) {
+        if (localId <= 0L) return
+        val now = System.currentTimeMillis()
+        val existing = syncMetaDao.byLocal(table, localId)
+        if (existing == null) {
+            syncMetaDao.insert(
+                SyncMeta(
+                    tableName = table, localId = localId, uid = UUID.randomUUID().toString(),
+                    updatedAt = now, deleted = false, pending = true
+                )
+            )
+        } else {
+            syncMetaDao.update(existing.copy(updatedAt = now, deleted = false, pending = true))
+        }
+    }
+
+    /** Tombstone a deleted local row so the deletion propagates to the cloud. */
+    private suspend fun tombstoneSync(table: String, localId: Long) {
+        val existing = syncMetaDao.byLocal(table, localId) ?: return
+        syncMetaDao.update(existing.copy(updatedAt = System.currentTimeMillis(), deleted = true, pending = true))
+    }
 
     // ---- Streams ----
     val trades: Flow<List<Trade>> = tradeDao.observeAll()
@@ -71,17 +99,27 @@ class TradeLogRepository(
     suspend fun getTrade(id: Long): Trade? = tradeDao.getById(id)
     suspend fun saveTrade(trade: Trade): Long {
         val stamped = if (trade.createdAt == 0L) trade.copy(createdAt = System.currentTimeMillis()) else trade
-        return if (stamped.id == 0L) tradeDao.insert(stamped) else { tradeDao.update(stamped); stamped.id }
+        val id = if (stamped.id == 0L) tradeDao.insert(stamped) else { tradeDao.update(stamped); stamped.id }
+        touchSync(SyncTables.TRADES, id)
+        return id
     }
-    suspend fun deleteTrade(trade: Trade) = tradeDao.delete(trade)
+    suspend fun deleteTrade(trade: Trade) {
+        tombstoneSync(SyncTables.TRADES, trade.id)
+        tradeDao.delete(trade)
+    }
 
     // ---- Accounts ----
     suspend fun getAccount(id: Long): Account? = accountDao.getById(id)
     suspend fun saveAccount(account: Account): Long {
         val stamped = if (account.createdAt == 0L) account.copy(createdAt = System.currentTimeMillis()) else account
-        return accountDao.upsert(stamped)
+        val id = accountDao.upsert(stamped)
+        touchSync(SyncTables.ACCOUNTS, id)
+        return id
     }
-    suspend fun deleteAccount(account: Account) = accountDao.delete(account)
+    suspend fun deleteAccount(account: Account) {
+        tombstoneSync(SyncTables.ACCOUNTS, account.id)
+        accountDao.delete(account)
+    }
 
     /** Net realized P&L per account, computed from trades. */
     suspend fun accountPnl(): Map<Long, Double> =
@@ -93,16 +131,28 @@ class TradeLogRepository(
     fun observeJournal(date: String): Flow<JournalEntry?> = journalDao.observeByDate(date)
     suspend fun saveJournal(entry: JournalEntry): Long {
         val stamped = if (entry.createdAt == 0L) entry.copy(createdAt = System.currentTimeMillis()) else entry
-        return journalDao.insert(stamped)
+        val id = journalDao.insert(stamped)
+        touchSync(SyncTables.JOURNAL, id)
+        return id
     }
-    suspend fun deleteJournal(entry: JournalEntry) = journalDao.delete(entry)
+    suspend fun deleteJournal(entry: JournalEntry) {
+        tombstoneSync(SyncTables.JOURNAL, entry.id)
+        journalDao.delete(entry)
+    }
 
     // ---- Notebook ----
     fun searchNotes(q: String): Flow<List<NotebookNote>> =
         if (q.isBlank()) notebookDao.observeAll() else notebookDao.search(q.trim())
     suspend fun getNote(id: Long): NotebookNote? = notebookDao.getById(id)
-    suspend fun saveNote(note: NotebookNote): Long = notebookDao.upsert(note.copy(updatedAt = System.currentTimeMillis()))
-    suspend fun deleteNote(note: NotebookNote) = notebookDao.delete(note)
+    suspend fun saveNote(note: NotebookNote): Long {
+        val id = notebookDao.upsert(note.copy(updatedAt = System.currentTimeMillis()))
+        touchSync(SyncTables.NOTES, id)
+        return id
+    }
+    suspend fun deleteNote(note: NotebookNote) {
+        tombstoneSync(SyncTables.NOTES, note.id)
+        notebookDao.delete(note)
+    }
 
     // ---- Setup tags ----
     suspend fun addSetupTag(name: String) { if (name.isNotBlank()) setupTagDao.insert(SetupTag(name = name.trim())) }
@@ -112,9 +162,14 @@ class TradeLogRepository(
     suspend fun getPayout(id: Long): PayoutRecord? = payoutDao.getById(id)
     suspend fun savePayout(payout: PayoutRecord): Long {
         val stamped = if (payout.createdAt == 0L) payout.copy(createdAt = System.currentTimeMillis()) else payout
-        return payoutDao.upsert(stamped)
+        val id = payoutDao.upsert(stamped)
+        touchSync(SyncTables.PAYOUTS, id)
+        return id
     }
-    suspend fun deletePayout(payout: PayoutRecord) = payoutDao.delete(payout)
+    suspend fun deletePayout(payout: PayoutRecord) {
+        tombstoneSync(SyncTables.PAYOUTS, payout.id)
+        payoutDao.delete(payout)
+    }
 
     // ---- Goals ----
     suspend fun getGoal(id: Long): Goal? = goalDao.getById(id)
@@ -213,13 +268,16 @@ class TradeLogRepository(
     fun observeBacktestImages(id: Long): Flow<List<BacktestImage>> = backtestDao.observeImages(id)
     suspend fun saveBacktest(backtest: Backtest): Long {
         val stamped = if (backtest.createdAt == 0L) backtest.copy(createdAt = System.currentTimeMillis()) else backtest
-        return backtestDao.upsert(stamped)
+        val id = backtestDao.upsert(stamped)
+        touchSync(SyncTables.BACKTESTS, id)
+        return id
     }
     suspend fun addBacktestImage(backtestId: Long, path: String) {
         backtestDao.insertImage(BacktestImage(backtestId = backtestId, path = path))
     }
     suspend fun deleteBacktestImage(image: BacktestImage) = backtestDao.deleteImage(image)
     suspend fun deleteBacktest(backtest: Backtest) {
+        tombstoneSync(SyncTables.BACKTESTS, backtest.id)
         backtestDao.imagesOf(backtest.id).forEach { com.tradelog.app.util.ImageStorage.delete(it.path) }
         backtestDao.deleteImagesFor(backtest.id)
         backtestDao.delete(backtest)

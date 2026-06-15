@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CandlestickChart
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Settings
@@ -39,6 +40,7 @@ fun MoreScreen(onNavigate: (String) -> Unit) {
         MoreItem("Notebook", Routes.NOTEBOOK, Icons.AutoMirrored.Filled.MenuBook),
         MoreItem("Payouts", Routes.PAYOUTS, Icons.Filled.Payments),
         MoreItem("Trading tools", Routes.TOOLS, Icons.Filled.Build),
+        MoreItem("Cloud sync (website)", Routes.SYNC, Icons.Filled.CloudSync),
         MoreItem("Settings", Routes.SETTINGS, Icons.Filled.Settings)
     )
     TopLevelScaffold(title = "More") { inner ->

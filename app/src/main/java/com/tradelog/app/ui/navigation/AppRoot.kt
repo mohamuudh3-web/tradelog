@@ -34,6 +34,7 @@ import com.tradelog.app.ui.payouts.PayoutsScreen
 import com.tradelog.app.ui.portfolio.AccountEditScreen
 import com.tradelog.app.ui.portfolio.PortfolioScreen
 import com.tradelog.app.ui.settings.SettingsScreen
+import com.tradelog.app.ui.sync.SyncScreen
 import com.tradelog.app.ui.tools.InstrumentsScreen
 import com.tradelog.app.ui.tools.PositionCalcScreen
 import com.tradelog.app.ui.tools.ToolsScreen
@@ -198,6 +199,9 @@ fun AppRoot(openCalendar: Boolean, onCalendarConsumed: () -> Unit) {
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SYNC) {
+                SyncScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.INSTRUMENTS) {
                 InstrumentsScreen(onBack = { navController.popBackStack() })

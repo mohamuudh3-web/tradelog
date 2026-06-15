@@ -34,6 +34,7 @@ object Routes {
     const val BACKTEST_EDIT = "backtest_edit" // ?id=
     const val BACKTEST_STATS = "backtest_stats"
     const val COUNTDOWN = "countdown"
+    const val SYNC = "sync"
 
     fun tradeEdit(id: Long = 0L) = "$TRADE_EDIT?id=$id"
     fun tradeDetail(id: Long) = "$TRADE_DETAIL/$id"

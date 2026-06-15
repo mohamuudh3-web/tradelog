@@ -8,10 +8,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.lifecycleScope
+import com.tradelog.app.di.ServiceLocator
 import com.tradelog.app.ui.navigation.AppRoot
 import com.tradelog.app.ui.onboarding.OnboardingScreen
 import com.tradelog.app.ui.theme.TradeLogTheme
 import com.tradelog.app.work.NotificationHelper
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -24,6 +27,15 @@ class MainActivity : ComponentActivity() {
         openCalendar.value = intent?.getBooleanExtra(NotificationHelper.EXTRA_OPEN_CALENDAR, false) == true
 
         val prefs = getSharedPreferences("tradelog_prefs", MODE_PRIVATE)
+
+        // Pull/push cloud data on launch when the user is signed in (no-op otherwise).
+        lifecycleScope.launch {
+            runCatching {
+                if (ServiceLocator.syncStore(applicationContext).current().isLoggedIn) {
+                    ServiceLocator.syncEngine(applicationContext).syncAll()
+                }
+            }
+        }
 
         setContent {
             TradeLogTheme {
