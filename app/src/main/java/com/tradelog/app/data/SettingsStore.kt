@@ -17,7 +17,7 @@ data class AppSettings(
     val briefingMinute: Int = 0,
     val defaultCurrency: String = "USD",
     val lastCalendarSync: Long = 0L,
-    val newsAlertEnabled: Boolean = false,
+    val newsAlertEnabled: Boolean = true,
     val newsAlertMinutes: Int = 30
 )
 
@@ -40,7 +40,7 @@ class SettingsStore(private val context: Context) {
             briefingMinute = p[Keys.MINUTE] ?: 0,
             defaultCurrency = p[Keys.CURRENCY] ?: "USD",
             lastCalendarSync = p[Keys.LAST_SYNC]?.toLongOrNull() ?: 0L,
-            newsAlertEnabled = p[Keys.NEWS_ALERT] ?: false,
+            newsAlertEnabled = p[Keys.NEWS_ALERT] ?: true,
             newsAlertMinutes = p[Keys.NEWS_ALERT_MIN] ?: 30
         )
     }

@@ -18,6 +18,9 @@ class OnboardingViewModel(private val repo: TradeLogRepository) : ViewModel() {
     fun enableBriefing(context: Context, hour: Int, minute: Int) = viewModelScope.launch {
         repo.settings.setBriefingEnabled(true)
         repo.settings.setBriefingTime(hour, minute)
+        repo.settings.setNewsAlert(true, 30)
+        // Make sure the feed is cached so the briefing/alerts have data, then schedule.
+        repo.refreshCalendar()
         BriefingScheduler.reschedule(context.applicationContext, true, hour, minute)
         NewsAlertScheduler.scheduleAll(context.applicationContext)
     }

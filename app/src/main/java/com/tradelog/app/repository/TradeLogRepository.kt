@@ -224,6 +224,18 @@ class TradeLogRepository(
         return eventDao.highImpactBetween(start, end)
     }
 
+    /** Today's high + medium impact events (for the morning briefing). */
+    suspend fun importantToday(): List<EconomicEvent> {
+        val (start, end) = DateUtils.dayEpochBounds()
+        return eventDao.between(start, end).filter { it.impact == Impact.HIGH || it.impact == Impact.MEDIUM }
+    }
+
+    /** High-impact events strictly after today, up to [withinMillis] ahead (e.g. tomorrow's big releases). */
+    suspend fun highImpactSoon(withinMillis: Long = 2L * 24 * 60 * 60 * 1000): List<EconomicEvent> {
+        val (_, todayEnd) = DateUtils.dayEpochBounds()
+        return eventDao.highImpactBetween(todayEnd + 1, System.currentTimeMillis() + withinMillis)
+    }
+
     /** Upcoming high-impact events from now up to [withinMillis] ahead (default 7 days). */
     suspend fun upcomingHighImpact(withinMillis: Long = 7L * 24 * 60 * 60 * 1000): List<EconomicEvent> {
         val now = System.currentTimeMillis()

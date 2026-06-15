@@ -143,6 +143,9 @@ interface EconomicEventDao {
     @Query("SELECT * FROM economic_events WHERE dateTimeUtc BETWEEN :start AND :end AND impact = 'HIGH' ORDER BY dateTimeUtc ASC")
     suspend fun highImpactBetween(start: Long, end: Long): List<EconomicEvent>
 
+    @Query("SELECT * FROM economic_events WHERE dateTimeUtc BETWEEN :start AND :end ORDER BY dateTimeUtc ASC")
+    suspend fun between(start: Long, end: Long): List<EconomicEvent>
+
     @Query("SELECT COUNT(*) FROM economic_events")
     suspend fun count(): Int
 

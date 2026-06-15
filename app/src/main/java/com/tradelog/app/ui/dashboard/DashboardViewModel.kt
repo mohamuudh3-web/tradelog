@@ -66,9 +66,12 @@ class DashboardViewModel(private val repo: TradeLogRepository) : ViewModel() {
         }.sortedBy { it.dateTimeUtc }.take(5)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    init {
-        // Populate the calendar cache so the dashboard preview isn't empty on first run.
-        viewModelScope.launch { if (!repo.hasCachedEvents()) repo.refreshCalendar() }
+    /** Refresh the economic feed and (re)schedule high-impact alerts when the home screen opens. */
+    fun syncNews(context: android.content.Context) {
+        viewModelScope.launch {
+            repo.refreshCalendar()
+            com.tradelog.app.work.NewsAlertScheduler.scheduleAll(context.applicationContext)
+        }
     }
 
     fun toggleTask(task: TaskItem, done: Boolean) {

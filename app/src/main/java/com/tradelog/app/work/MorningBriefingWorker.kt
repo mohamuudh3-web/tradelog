@@ -17,15 +17,24 @@ class MorningBriefingWorker(
         // Best-effort refresh; fall back to cached events if offline.
         repo.refreshCalendar()
 
-        val events = repo.highImpactToday()
-        val title = "Today's high-impact news"
-        val body = if (events.isEmpty()) {
-            "No high-impact economic events scheduled today. Trade your plan."
-        } else {
-            events.take(6).joinToString("\n") { e ->
-                "${DateUtils.formatEpochTime(e.dateTimeUtc)}  ${e.country}  ${e.title}"
-            }.let { lines ->
-                if (events.size > 6) "$lines\n+${events.size - 6} more" else lines
+        val today = repo.importantToday()
+        val soon = repo.highImpactSoon()
+        val title = "Today's economic events"
+
+        val body = buildString {
+            if (today.isNotEmpty()) {
+                append(today.take(6).joinToString("\n") { e ->
+                    "${DateUtils.formatEpochTime(e.dateTimeUtc)}  ${e.country}  ${e.title} (${e.impact.name})"
+                })
+                if (today.size > 6) append("\n+${today.size - 6} more today")
+            } else {
+                append("No high/medium events today.")
+            }
+            if (soon.isNotEmpty()) {
+                append("\n\nComing up:")
+                append("\n" + soon.take(4).joinToString("\n") { e ->
+                    "${DateUtils.formatEpochDateTime(e.dateTimeUtc)}  ${e.country}  ${e.title}"
+                })
             }
         }
 
