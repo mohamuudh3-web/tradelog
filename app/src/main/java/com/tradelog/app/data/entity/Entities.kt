@@ -164,6 +164,21 @@ data class TaskCompletion(
     val date: String
 )
 
+@Entity(tableName = "countdowns")
+data class Countdown(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val targetDateMillis: Long,
+    val motivation: String = "",
+    val reminderHour: Int = 7,
+    val reminderMinute: Int = 0,
+    val reviewDone: Boolean = false,
+    val reachedIt: Boolean = false,
+    val wentWrong: String = "",
+    val improveNext: String = "",
+    val createdAt: Long = 0L
+)
+
 @Entity(tableName = "checklist_rules")
 data class ChecklistRule(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

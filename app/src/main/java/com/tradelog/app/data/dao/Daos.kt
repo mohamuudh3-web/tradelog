@@ -11,6 +11,7 @@ import com.tradelog.app.data.entity.Account
 import com.tradelog.app.data.entity.Backtest
 import com.tradelog.app.data.entity.BacktestImage
 import com.tradelog.app.data.entity.ChecklistRule
+import com.tradelog.app.data.entity.Countdown
 import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.Goal
@@ -199,6 +200,24 @@ interface TaskDao {
 }
 
 @Dao
+interface CountdownDao {
+    @Query("SELECT * FROM countdowns ORDER BY targetDateMillis ASC")
+    fun observeAll(): Flow<List<Countdown>>
+
+    @Query("SELECT * FROM countdowns ORDER BY targetDateMillis ASC")
+    suspend fun getAll(): List<Countdown>
+
+    @Query("SELECT * FROM countdowns WHERE id = :id")
+    suspend fun getById(id: Long): Countdown?
+
+    @Upsert
+    suspend fun upsert(countdown: Countdown): Long
+
+    @Delete
+    suspend fun delete(countdown: Countdown)
+}
+
+@Dao
 interface ChecklistRuleDao {
     @Query("SELECT * FROM checklist_rules ORDER BY sortOrder ASC, id ASC")
     fun observeAll(): Flow<List<ChecklistRule>>
@@ -238,6 +257,9 @@ interface BacktestDao {
 
     @Query("SELECT * FROM backtests WHERE id = :id")
     suspend fun getById(id: Long): Backtest?
+
+    @Query("SELECT COUNT(*) FROM backtests WHERE createdAt BETWEEN :start AND :end")
+    suspend fun countBetween(start: Long, end: Long): Int
 
     @Upsert
     suspend fun upsert(backtest: Backtest): Long

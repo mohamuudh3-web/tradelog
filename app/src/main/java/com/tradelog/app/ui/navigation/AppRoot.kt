@@ -21,6 +21,7 @@ import com.tradelog.app.ui.backtest.BacktestEditScreen
 import com.tradelog.app.ui.backtest.BacktestGalleryScreen
 import com.tradelog.app.ui.backtest.BacktestStatsScreen
 import com.tradelog.app.ui.calendar.CalendarScreen
+import com.tradelog.app.ui.countdown.CountdownScreen
 import com.tradelog.app.ui.dashboard.DashboardScreen
 import com.tradelog.app.ui.goals.GoalsScreen
 import com.tradelog.app.ui.journal.DailyEntryScreen
@@ -211,6 +212,9 @@ fun AppRoot(openCalendar: Boolean, onCalendarConsumed: () -> Unit) {
             }
             composable(Routes.BACKTEST_STATS) {
                 BacktestStatsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.COUNTDOWN) {
+                CountdownScreen(onBack = { navController.popBackStack() })
             }
             composable(
                 route = "${Routes.BACKTEST_EDIT}?id={id}",

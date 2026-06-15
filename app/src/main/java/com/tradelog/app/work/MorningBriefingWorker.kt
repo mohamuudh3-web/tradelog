@@ -40,6 +40,26 @@ class MorningBriefingWorker(
 
         NotificationHelper.showBriefing(applicationContext, title, body)
 
+        // Daily backtest reminder.
+        val didBacktest = repo.backtestedYesterday()
+        NotificationHelper.showSimple(
+            applicationContext,
+            "Backtest reminder",
+            com.tradelog.app.util.CountdownMessages.backtestReminder(didBacktest),
+            3000
+        )
+
+        // Goal countdown pushes (active, not yet reviewed).
+        repo.allCountdowns().filter { !it.reviewDone }.take(3).forEachIndexed { i, c ->
+            val d = com.tradelog.app.util.DateUtils.daysUntil(c.targetDateMillis)
+            NotificationHelper.showSimple(
+                applicationContext,
+                com.tradelog.app.util.CountdownMessages.daysLeftLabel(d, c.title),
+                com.tradelog.app.util.CountdownMessages.push(d),
+                4000 + i
+            )
+        }
+
         // Refresh upcoming high-impact alerts now that the calendar is updated.
         NewsAlertScheduler.scheduleAll(applicationContext)
         return Result.success()

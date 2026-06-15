@@ -78,4 +78,10 @@ object DateUtils {
 
     fun isSameLocalDay(epochMillis: Long, date: LocalDate = today()): Boolean =
         Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalDate() == date
+
+    /** Whole days from today until the given date (negative if in the past). */
+    fun daysUntil(epochMillis: Long): Int {
+        val target = Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalDate()
+        return java.time.temporal.ChronoUnit.DAYS.between(today(), target).toInt()
+    }
 }

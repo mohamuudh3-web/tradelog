@@ -6,6 +6,7 @@ import com.tradelog.app.data.entity.Account
 import com.tradelog.app.data.entity.Backtest
 import com.tradelog.app.data.entity.BacktestImage
 import com.tradelog.app.data.entity.ChecklistRule
+import com.tradelog.app.data.entity.Countdown
 import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.Goal
@@ -45,6 +46,7 @@ class TradeLogRepository(
     private val instrumentDao = db.instrumentDao()
     private val backtestDao = db.backtestDao()
     private val checklistRuleDao = db.checklistRuleDao()
+    private val countdownDao = db.countdownDao()
 
     // ---- Streams ----
     val trades: Flow<List<Trade>> = tradeDao.observeAll()
@@ -60,6 +62,7 @@ class TradeLogRepository(
     val presets: Flow<List<PositionPreset>> = presetDao.observeAll()
     val instruments: Flow<List<Instrument>> = instrumentDao.observeAll()
     val checklistRules: Flow<List<ChecklistRule>> = checklistRuleDao.observeAll()
+    val countdowns: Flow<List<Countdown>> = countdownDao.observeAll()
     val backtests: Flow<List<Backtest>> = backtestDao.observeAll()
     val backtestImages: Flow<List<BacktestImage>> = backtestDao.observeAllImages()
 
@@ -189,6 +192,21 @@ class TradeLogRepository(
     }
     suspend fun deleteChecklistRule(rule: ChecklistRule) = checklistRuleDao.delete(rule)
     suspend fun checklistRuleCount(): Int = checklistRuleDao.count()
+
+    // ---- Goal countdowns ----
+    suspend fun getCountdown(id: Long): Countdown? = countdownDao.getById(id)
+    suspend fun saveCountdown(c: Countdown): Long {
+        val stamped = if (c.createdAt == 0L) c.copy(createdAt = System.currentTimeMillis()) else c
+        return countdownDao.upsert(stamped)
+    }
+    suspend fun deleteCountdown(c: Countdown) = countdownDao.delete(c)
+    suspend fun allCountdowns(): List<Countdown> = countdownDao.getAll()
+
+    /** Did the user log any backtest yesterday (local day)? */
+    suspend fun backtestedYesterday(): Boolean {
+        val (start, end) = DateUtils.dayEpochBounds(DateUtils.today().minusDays(1))
+        return backtestDao.countBetween(start, end) > 0
+    }
 
     // ---- Backtests ----
     suspend fun getBacktest(id: Long): Backtest? = backtestDao.getById(id)

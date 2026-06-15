@@ -11,6 +11,7 @@ import com.tradelog.app.ui.backtest.BacktestEditViewModel
 import com.tradelog.app.ui.backtest.BacktestListViewModel
 import com.tradelog.app.ui.backtest.BacktestStatsViewModel
 import com.tradelog.app.ui.calendar.CalendarViewModel
+import com.tradelog.app.ui.countdown.CountdownViewModel
 import com.tradelog.app.ui.dashboard.DashboardViewModel
 import com.tradelog.app.ui.goals.GoalsViewModel
 import com.tradelog.app.ui.journal.DailyEntryViewModel
@@ -53,6 +54,7 @@ class AppViewModelFactory(private val repo: TradeLogRepository) : ViewModelProvi
             modelClass.isAssignableFrom(BacktestEditViewModel::class.java) -> BacktestEditViewModel(repo)
             modelClass.isAssignableFrom(BacktestStatsViewModel::class.java) -> BacktestStatsViewModel(repo)
             modelClass.isAssignableFrom(OnboardingViewModel::class.java) -> OnboardingViewModel(repo)
+            modelClass.isAssignableFrom(CountdownViewModel::class.java) -> CountdownViewModel(repo)
             else -> throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
         }
         return vm as T

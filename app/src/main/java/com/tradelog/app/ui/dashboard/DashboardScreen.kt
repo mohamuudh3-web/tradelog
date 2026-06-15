@@ -49,6 +49,7 @@ import com.tradelog.app.ui.common.resultColor
 import com.tradelog.app.ui.navigation.Routes
 import com.tradelog.app.ui.theme.Loss
 import com.tradelog.app.ui.theme.Win
+import com.tradelog.app.util.CountdownMessages
 import com.tradelog.app.util.DateUtils
 import com.tradelog.app.util.Format
 
@@ -60,6 +61,7 @@ fun DashboardScreen(
 ) {
     val vm: DashboardViewModel = appViewModel()
     val state by vm.state.collectAsStateWithLifecycle()
+    val countdown by vm.nearestCountdown.collectAsStateWithLifecycle()
     var menuOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
     LaunchedEffect(Unit) { vm.syncNews(context) }
@@ -67,6 +69,7 @@ fun DashboardScreen(
     val quickLinks = listOf(
         "Analytics" to Routes.ANALYTICS,
         "Goals & Tasks" to Routes.GOALS,
+        "Goal countdown" to Routes.COUNTDOWN,
         "Portfolio" to Routes.PORTFOLIO,
         "Backtesting journal" to Routes.BACKTESTS,
         "Notebook" to Routes.NOTEBOOK,
@@ -122,6 +125,26 @@ fun DashboardScreen(
                     StatTile("Win rate", Format.percent(state.winRate), Modifier.weight(1f))
                     StatTile("Trades", state.totalTrades.toString(), Modifier.weight(1f))
                     StatTile("Goals", state.openGoals.toString(), Modifier.weight(1f))
+                }
+            }
+
+            countdown?.let { c ->
+                item {
+                    val days = DateUtils.daysUntil(c.targetDateMillis)
+                    val expired = days < 0
+                    SectionCard(modifier = Modifier.clickable { onNavigate(Routes.COUNTDOWN) }) {
+                        Text(
+                            CountdownMessages.daysLeftLabel(days, c.title),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = if (expired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            if (expired) "Tap to review this goal." else CountdownMessages.push(days),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                 }
             }
 

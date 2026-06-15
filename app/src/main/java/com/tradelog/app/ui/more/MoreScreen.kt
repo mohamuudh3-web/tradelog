@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CandlestickChart
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -34,6 +35,7 @@ fun MoreScreen(onNavigate: (String) -> Unit) {
     val items = listOf(
         MoreItem("Portfolio", Routes.PORTFOLIO, Icons.Filled.AccountBalanceWallet),
         MoreItem("Backtesting journal", Routes.BACKTESTS, Icons.Filled.CandlestickChart),
+        MoreItem("Goal countdown", Routes.COUNTDOWN, Icons.Filled.Flag),
         MoreItem("Notebook", Routes.NOTEBOOK, Icons.AutoMirrored.Filled.MenuBook),
         MoreItem("Payouts", Routes.PAYOUTS, Icons.Filled.Payments),
         MoreItem("Trading tools", Routes.TOOLS, Icons.Filled.Build),

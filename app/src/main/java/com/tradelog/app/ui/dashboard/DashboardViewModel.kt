@@ -2,6 +2,7 @@ package com.tradelog.app.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tradelog.app.data.entity.Countdown
 import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Goal
 import com.tradelog.app.data.entity.Impact
@@ -65,6 +66,11 @@ class DashboardViewModel(private val repo: TradeLogRepository) : ViewModel() {
             it.dateTimeUtc >= now && it.impact in setOf(Impact.HIGH, Impact.MEDIUM, Impact.HOLIDAY)
         }.sortedBy { it.dateTimeUtc }.take(5)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Nearest goal that still needs attention (active or awaiting review). */
+    val nearestCountdown: StateFlow<Countdown?> = repo.countdowns.map { list ->
+        list.filter { !it.reviewDone }.minByOrNull { it.targetDateMillis }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /** Refresh the economic feed and (re)schedule high-impact alerts when the home screen opens. */
     fun syncNews(context: android.content.Context) {
