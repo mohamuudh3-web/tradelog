@@ -137,14 +137,14 @@ object Seeder {
         }
     }
 
-    /** Default confirmation checklist rules. */
+    /** Default confirmation checklist rules (Somali, as the user uses them). */
     suspend fun seedV4(repo: TradeLogRepository) {
         listOf(
-            "Find the trend (H1/H4 for S1, 15M for S2/S3, 5M for S4)",
-            "Find the institutional order-flow zone",
-            "Wait for the liquidity grab with reversal volume",
-            "Confirm volume drives the countertrend break",
-            "Confirm momentum aligns with the direction"
+            "Soo hel Trend-ka (H1/H4 for S1) (15M for S2/S3) (5M for S4)",
+            "Soo hel Zone-ka maamulaya Order Flow-ga suuqa.",
+            "Sug in Liquidity-ga lagu jebiyo Reversal Volume muuqda.",
+            "Hubi in Volume-ka uu keeno Countertrend Break.",
+            "Hubi in Momentum-ku la jaanqaadayo direction-ka."
         ).forEach { repo.addChecklistRule(it) }
     }
 

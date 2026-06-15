@@ -20,9 +20,12 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -60,6 +63,10 @@ import com.tradelog.app.ui.common.PsychologyChips
 import com.tradelog.app.ui.common.SectionCard
 import com.tradelog.app.ui.common.ZoomableAsyncImage
 import com.tradelog.app.ui.common.resultColor
+import com.tradelog.app.ui.theme.Loss
+import com.tradelog.app.ui.theme.Neutral
+import com.tradelog.app.ui.theme.Win
+import com.tradelog.app.util.Grade
 import com.tradelog.app.util.ImageStorage
 import kotlinx.coroutines.launch
 import java.io.File
@@ -182,6 +189,41 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
             }
 
             FormField(form.notes, { v -> vm.update { it.copy(notes = v) } }, "Notes", singleLine = false, minLines = 3)
+
+            // Trade summary
+            val total = rules.size
+            val checked = form.checkedRules.size
+            val missing = (total - checked).coerceAtLeast(0)
+            val grade = Grade.of(checked, total)
+            SectionCard(title = "Trade summary") {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Grade", style = MaterialTheme.typography.titleMedium)
+                    Text(grade, style = MaterialTheme.typography.headlineSmall, color = gradeColor(grade))
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    SummaryItem("Direction", if (form.direction == Direction.LONG) "Buy" else "Sell")
+                    SummaryItem("Session", form.session.ifBlank { "—" })
+                    SummaryItem("Pair", form.instrument.ifBlank { "—" })
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    SummaryItem("Total rules", total.toString())
+                    SummaryItem("Checked", checked.toString())
+                    SummaryItem("Missing", missing.toString())
+                }
+            }
+
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = { vm.save(onBack) },
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Win, contentColor = Color.White)
+                ) { Text("TAKE TRADE", style = MaterialTheme.typography.titleMedium) }
+                OutlinedButton(
+                    onClick = onBack,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Loss)
+                ) { Text("Cancel") }
+            }
         }
     }
 
@@ -206,6 +248,20 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
             dismissButton = { TextButton(onClick = { showAddPair = false }) { Text("Cancel") } }
         )
     }
+}
+
+@Composable
+private fun SummaryItem(label: String, value: String) {
+    Column {
+        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+private fun gradeColor(grade: String): Color = when (grade) {
+    "A+", "A" -> Win
+    "F", "D" -> Loss
+    else -> Neutral
 }
 
 @Composable
