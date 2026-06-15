@@ -101,6 +101,11 @@ fun PositionCalcScreen(onBack: () -> Unit) {
                 FormField(form.stopLoss, { v -> vm.update { it.copy(stopLoss = v) } }, "Stop (pips/pts)", Modifier.weight(1f), keyboardType = KeyboardType.Number)
             }
             FormField(form.pipValuePerLot, { v -> vm.update { it.copy(pipValuePerLot = v) } }, "Pip/point value per 1.0 lot", keyboardType = KeyboardType.Number)
+            Text(
+                "FX majors ≈ 10 (stop in pips). Gold XAUUSD = 100 — enter the stop as the price-dollar distance (e.g. 5 for a \$5 stop). Pick a saved pair to auto-fill this.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             Button(
                 onClick = { vm.calculate() },

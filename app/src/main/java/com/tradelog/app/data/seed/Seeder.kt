@@ -113,7 +113,10 @@ object Seeder {
             "EURUSD" to 10.0, "GBPUSD" to 10.0, "AUDUSD" to 10.0, "NZDUSD" to 10.0,
             "USDJPY" to 9.0, "USDCAD" to 7.5, "USDCHF" to 11.0,
             "GBPJPY" to 9.0, "EURJPY" to 9.0,
-            "XAUUSD" to 10.0, "XAGUSD" to 50.0,
+            // Gold: 1 lot = 100 oz → $1.00 move = $100/lot (enter stop as the price-dollar distance).
+            "XAUUSD" to 100.0,
+            // Silver: 1 lot = 5000 oz → $1.00 move = $5000/lot.
+            "XAGUSD" to 5000.0,
             "US30" to 1.0, "NAS100" to 1.0, "SPX500" to 1.0,
             "BTCUSD" to 1.0
         )
