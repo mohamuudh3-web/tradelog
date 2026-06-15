@@ -71,7 +71,7 @@ import com.tradelog.app.util.ImageStorage
 import kotlinx.coroutines.launch
 import java.io.File
 
-private val SESSIONS = listOf("S1", "S2", "S3", "S4", "London", "New York", "Asia", "Other")
+private val SESSIONS = listOf("LONDON", "NEW YORK", "ASIA")
 
 @Composable
 fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
@@ -85,6 +85,12 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
     var showAddPair by remember { mutableStateOf(false) }
 
     LaunchedEffect(tradeId) { vm.load(tradeId) }
+    // Auto-select the only account for a new trade; otherwise the user picks.
+    LaunchedEffect(accounts, tradeId) {
+        if (tradeId == 0L && form.accountId == null && accounts.size == 1) {
+            vm.update { it.copy(accountId = accounts.first().id) }
+        }
+    }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) scope.launch {

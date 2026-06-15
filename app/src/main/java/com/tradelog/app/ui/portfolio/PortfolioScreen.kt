@@ -76,8 +76,10 @@ fun PortfolioScreen(onAdd: () -> Unit, onEdit: (Long) -> Unit, onBack: () -> Uni
                                 Text(acc.broker, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Column(horizontalAlignment = Alignment.End) {
-                                Text(Format.money(acc.balance, acc.currency), style = MaterialTheme.typography.titleSmall)
+                                // Current balance = starting balance + realized P&L from this account's trades.
+                                Text(Format.money(acc.balance + accPnl, acc.currency), style = MaterialTheme.typography.titleMedium)
                                 Text(Format.signedMoney(accPnl, acc.currency), style = MaterialTheme.typography.bodySmall, color = if (accPnl >= 0) Win else Loss)
+                                Text("start ${Format.money(acc.balance, acc.currency)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
