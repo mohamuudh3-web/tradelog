@@ -52,6 +52,22 @@ class BootReceiver : BroadcastReceiver() {
             val s = settings.settings.first()
             BriefingScheduler.reschedule(context, s.briefingEnabled, s.briefingHour, s.briefingMinute)
             NewsAlertScheduler.scheduleAll(context)
+            ReminderScheduler.rescheduleAll(context)
         }
+    }
+}
+
+/** Fired by AlarmManager at a task/routine/goal's reminder time. */
+class ReminderReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent?) {
+        val title = intent?.getStringExtra(ReminderScheduler.EXTRA_TITLE) ?: return
+        val kind = intent.getStringExtra(ReminderScheduler.EXTRA_KIND) ?: "task"
+        val hour = intent.getIntExtra(ReminderScheduler.EXTRA_HOUR, -1)
+        val minute = intent.getIntExtra(ReminderScheduler.EXTRA_MINUTE, 0)
+        val rc = intent.getIntExtra(ReminderScheduler.EXTRA_REQUEST, 0)
+        val label = if (kind == "goal") "Goal reminder" else "Reminder"
+        NotificationHelper.showSimple(context, label, title, rc)
+        // Re-arm for tomorrow.
+        if (hour in 0..23 && rc != 0) ReminderScheduler.schedule(context, rc, title, kind, hour, minute)
     }
 }

@@ -50,6 +50,11 @@
             android:enabled="true"
             android:exported="false" />
 
+        <receiver
+            android:name=".work.ReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
     </application>
 
 </manifest>

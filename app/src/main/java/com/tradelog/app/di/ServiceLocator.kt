@@ -8,6 +8,10 @@ import com.tradelog.app.network.NetworkModule
 import com.tradelog.app.network.SupabaseClient
 import com.tradelog.app.repository.TradeLogRepository
 import com.tradelog.app.sync.SyncEngine
+import com.tradelog.app.sync.SyncManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 /** Tiny manual DI container — avoids the weight of a DI framework. */
 object ServiceLocator {
@@ -16,6 +20,8 @@ object ServiceLocator {
     @Volatile private var sync: SyncEngine? = null
     @Volatile private var store: SyncStore? = null
     @Volatile private var supa: SupabaseClient? = null
+    @Volatile private var manager: SyncManager? = null
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     fun repository(context: Context): TradeLogRepository =
         repo ?: synchronized(this) {
@@ -39,6 +45,17 @@ object ServiceLocator {
                 val db = AppDatabase.get(app)
                 SyncEngine(db, supabase(app), syncStore(app))
             }.also { sync = it }
+        }
+
+    fun syncManager(context: Context): SyncManager =
+        manager ?: synchronized(this) {
+            manager ?: run {
+                val app = context.applicationContext
+                SyncManager(appScope, syncEngine(app), syncStore(app)).also { mgr ->
+                    // Any local save/delete triggers an automatic debounced sync.
+                    repository(app).onSyncRequested = { mgr.request() }
+                }
+            }.also { manager = it }
         }
 
     private fun build(appContext: Context): TradeLogRepository {

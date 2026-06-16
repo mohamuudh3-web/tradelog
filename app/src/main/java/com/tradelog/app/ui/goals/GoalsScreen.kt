@@ -1,5 +1,7 @@
 package com.tradelog.app.ui.goals
 
+import android.app.TimePickerDialog
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -22,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -34,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
@@ -52,6 +56,7 @@ import com.tradelog.app.ui.theme.Teal
 @Composable
 fun GoalsScreen() {
     val vm: GoalsViewModel = appViewModel()
+    val context = LocalContext.current
     val goals by vm.goals.collectAsStateWithLifecycle()
     val tasks by vm.tasks.collectAsStateWithLifecycle()
     val routine by vm.routine.collectAsStateWithLifecycle()
@@ -90,7 +95,7 @@ fun GoalsScreen() {
                         SectionCard {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Pill(g.goal.type.name, Teal)
-                                IconButton(onClick = { vm.deleteGoal(g.goal) }) { Icon(Icons.Filled.Delete, "Delete") }
+                                IconButton(onClick = { vm.deleteGoal(context, g.goal) }) { Icon(Icons.Filled.Delete, "Delete") }
                             }
                             ProgressRow(g.goal.title, g.progress, g.goal.target, g.goal.unit)
                             if (g.goal.metric == GoalMetric.MANUAL) {
@@ -110,7 +115,7 @@ fun GoalsScreen() {
                     emptyText = "No tasks yet. Tap + to add one.",
                     showFrequency = true,
                     onToggle = vm::toggleTask,
-                    onDelete = vm::deleteTask
+                    onDelete = { vm.deleteTask(context, it) }
                 )
             } else {
                 TaskChecklist(
@@ -118,20 +123,20 @@ fun GoalsScreen() {
                     emptyText = "No routine items yet. Tap + to add one.",
                     showFrequency = false,
                     onToggle = vm::toggleTask,
-                    onDelete = vm::deleteTask
+                    onDelete = { vm.deleteTask(context, it) }
                 )
             }
         }
     }
 
-    if (showGoalDialog) AddGoalDialog(onDismiss = { showGoalDialog = false }, onAdd = { title, type, metric, target, unit ->
-        vm.addGoal(title, type, metric, target, unit); showGoalDialog = false
+    if (showGoalDialog) AddGoalDialog(onDismiss = { showGoalDialog = false }, onAdd = { title, type, metric, target, unit, h, m ->
+        vm.addGoal(context, title, type, metric, target, unit, h, m); showGoalDialog = false
     })
-    if (showTaskDialog) AddTaskDialog(onDismiss = { showTaskDialog = false }, onAdd = { title, freq ->
-        vm.addTask(title, freq); showTaskDialog = false
+    if (showTaskDialog) AddTaskDialog(onDismiss = { showTaskDialog = false }, onAdd = { title, freq, h, m ->
+        vm.addTask(context, title, freq, h, m); showTaskDialog = false
     })
-    if (showRoutineDialog) AddRoutineDialog(onDismiss = { showRoutineDialog = false }, onAdd = { title ->
-        vm.addRoutine(title); showRoutineDialog = false
+    if (showRoutineDialog) AddRoutineDialog(onDismiss = { showRoutineDialog = false }, onAdd = { title, h, m ->
+        vm.addRoutine(context, title, h, m); showRoutineDialog = false
     })
 }
 
@@ -169,12 +174,38 @@ private fun TaskChecklist(
 }
 
 @Composable
-private fun AddGoalDialog(onDismiss: () -> Unit, onAdd: (String, GoalType, GoalMetric, Int, String) -> Unit) {
+private fun ReminderRow(hour: Int, minute: Int, onChange: (Int, Int) -> Unit) {
+    val context = LocalContext.current
+    val enabled = hour in 0..23
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Column {
+            Text("Daily reminder", style = MaterialTheme.typography.bodyMedium)
+            if (enabled) {
+                Text(
+                    "%02d:%02d".format(hour, minute),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable {
+                        TimePickerDialog(context, { _, h, m -> onChange(h, m) }, if (enabled) hour else 8, minute, true).show()
+                    }
+                )
+            } else {
+                Text("Off", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        Switch(checked = enabled, onCheckedChange = { on -> onChange(if (on) 8 else -1, if (on) 0 else 0) })
+    }
+}
+
+@Composable
+private fun AddGoalDialog(onDismiss: () -> Unit, onAdd: (String, GoalType, GoalMetric, Int, String, Int, Int) -> Unit) {
     var title by remember { mutableStateOf("") }
     var type by remember { mutableStateOf(GoalType.DAILY) }
     var metric by remember { mutableStateOf(GoalMetric.MANUAL) }
     var target by remember { mutableStateOf("1") }
     var unit by remember { mutableStateOf("") }
+    var rHour by remember { mutableStateOf(-1) }
+    var rMin by remember { mutableStateOf(0) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -201,17 +232,20 @@ private fun AddGoalDialog(onDismiss: () -> Unit, onAdd: (String, GoalType, GoalM
                     OutlinedTextField(target, { target = it.filter { c -> c.isDigit() } }, label = { Text("Target") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f))
                     OutlinedTextField(unit, { unit = it }, label = { Text("Unit") }, singleLine = true, modifier = Modifier.weight(1f))
                 }
+                ReminderRow(rHour, rMin) { h, m -> rHour = h; rMin = m }
             }
         },
-        confirmButton = { TextButton(onClick = { onAdd(title, type, metric, target.toIntOrNull() ?: 1, unit) }) { Text("Add") } },
+        confirmButton = { TextButton(onClick = { onAdd(title, type, metric, target.toIntOrNull() ?: 1, unit, rHour, rMin) }) { Text("Add") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
 
 @Composable
-private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, TaskFrequency) -> Unit) {
+private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, TaskFrequency, Int, Int) -> Unit) {
     var title by remember { mutableStateOf("") }
     var freq by remember { mutableStateOf(TaskFrequency.DAILY) }
+    var rHour by remember { mutableStateOf(-1) }
+    var rMin by remember { mutableStateOf(0) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("New task") },
@@ -221,17 +255,20 @@ private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, TaskFrequency) 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TaskFrequency.entries.forEach { f -> FilterChip(freq == f, { freq = f }, { Text(f.name) }) }
                 }
+                ReminderRow(rHour, rMin) { h, m -> rHour = h; rMin = m }
             }
         },
-        confirmButton = { TextButton(onClick = { onAdd(title, freq) }) { Text("Add") } },
+        confirmButton = { TextButton(onClick = { onAdd(title, freq, rHour, rMin) }) { Text("Add") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AddRoutineDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
+private fun AddRoutineDialog(onDismiss: () -> Unit, onAdd: (String, Int, Int) -> Unit) {
     var title by remember { mutableStateOf("") }
+    var rHour by remember { mutableStateOf(-1) }
+    var rMin by remember { mutableStateOf(0) }
     val suggestions = listOf("Woke up early", "Exercise / workout", "Clean room", "Meditate / breathe", "Hydrate", "Read", "Pray", "Plan the day")
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -245,9 +282,10 @@ private fun AddRoutineDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
                         FilterChip(selected = title == s, onClick = { title = s }, label = { Text(s) })
                     }
                 }
+                ReminderRow(rHour, rMin) { h, m -> rHour = h; rMin = m }
             }
         },
-        confirmButton = { TextButton(onClick = { onAdd(title) }) { Text("Add") } },
+        confirmButton = { TextButton(onClick = { onAdd(title, rHour, rMin) }) { Text("Add") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }

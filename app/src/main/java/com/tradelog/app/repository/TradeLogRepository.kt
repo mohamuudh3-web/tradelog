@@ -52,6 +52,9 @@ class TradeLogRepository(
     private val countdownDao = db.countdownDao()
     private val syncMetaDao = db.syncMetaDao()
 
+    /** Wired by ServiceLocator to kick off an automatic (debounced) sync after any local change. */
+    var onSyncRequested: (() -> Unit)? = null
+
     // ---- Cloud-sync bookkeeping ----
     /** Mark a local row as changed so the next sync pushes it to the cloud. */
     private suspend fun touchSync(table: String, localId: Long) {
@@ -68,12 +71,14 @@ class TradeLogRepository(
         } else {
             syncMetaDao.update(existing.copy(updatedAt = now, deleted = false, pending = true))
         }
+        onSyncRequested?.invoke()
     }
 
     /** Tombstone a deleted local row so the deletion propagates to the cloud. */
     private suspend fun tombstoneSync(table: String, localId: Long) {
         val existing = syncMetaDao.byLocal(table, localId) ?: return
         syncMetaDao.update(existing.copy(updatedAt = System.currentTimeMillis(), deleted = true, pending = true))
+        onSyncRequested?.invoke()
     }
 
     // ---- Streams ----

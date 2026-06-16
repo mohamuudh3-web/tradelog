@@ -139,6 +139,9 @@ data class Goal(
     val manualPeriodKey: String = "",
     val unit: String = "",
     val archived: Boolean = false,
+    /** Daily reminder time; hour -1 means no reminder. */
+    @ColumnInfo(defaultValue = "-1") val reminderHour: Int = -1,
+    @ColumnInfo(defaultValue = "0") val reminderMinute: Int = 0,
     val createdAt: Long = 0L
 )
 
@@ -153,6 +156,9 @@ data class TaskItem(
     /** For ONCE tasks only. */
     val doneOnce: Boolean = false,
     val sortOrder: Int = 0,
+    /** Daily reminder time; hour -1 means no reminder. */
+    @ColumnInfo(defaultValue = "-1") val reminderHour: Int = -1,
+    @ColumnInfo(defaultValue = "0") val reminderMinute: Int = 0,
     val createdAt: Long = 0L
 )
 

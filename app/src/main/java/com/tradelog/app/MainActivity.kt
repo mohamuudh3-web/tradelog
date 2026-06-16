@@ -14,6 +14,7 @@ import com.tradelog.app.ui.navigation.AppRoot
 import com.tradelog.app.ui.onboarding.OnboardingScreen
 import com.tradelog.app.ui.theme.TradeLogTheme
 import com.tradelog.app.work.NotificationHelper
+import com.tradelog.app.work.ReminderScheduler
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -28,14 +29,11 @@ class MainActivity : ComponentActivity() {
 
         val prefs = getSharedPreferences("tradelog_prefs", MODE_PRIVATE)
 
-        // Pull/push cloud data on launch when the user is signed in (no-op otherwise).
-        lifecycleScope.launch {
-            runCatching {
-                if (ServiceLocator.syncStore(applicationContext).current().isLoggedIn) {
-                    ServiceLocator.syncEngine(applicationContext).syncAll()
-                }
-            }
-        }
+        // Initialize the sync manager (wires automatic sync-after-save) and pull/push on launch.
+        ServiceLocator.syncManager(applicationContext).syncNow()
+
+        // Re-arm per-item reminders (survives app updates/reinstalls).
+        lifecycleScope.launch { runCatching { ReminderScheduler.rescheduleAll(applicationContext) } }
 
         setContent {
             TradeLogTheme {
@@ -50,5 +48,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Sync whenever the app comes to the foreground, so web changes appear without manual action.
+        ServiceLocator.syncManager(applicationContext).syncNow()
     }
 }

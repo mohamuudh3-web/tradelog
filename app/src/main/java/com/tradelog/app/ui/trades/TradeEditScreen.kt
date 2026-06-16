@@ -111,6 +111,17 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
 
             DropdownField("Session", SESSIONS, form.session.ifBlank { null }, { it }, { s -> vm.update { it.copy(session = s) } })
 
+            // Account this trade belongs to (its win/loss adjusts that account's balance).
+            if (accounts.isNotEmpty()) {
+                DropdownField(
+                    "Account",
+                    accounts,
+                    accounts.find { it.id == form.accountId },
+                    { it.name },
+                    { acc -> vm.update { it.copy(accountId = acc.id) } }
+                )
+            }
+
             // Symbol / pair
             FormField(form.instrument, { v -> vm.update { it.copy(instrument = v) } }, "Symbol / pair")
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
