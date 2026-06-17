@@ -230,6 +230,23 @@ begin
   end loop;
 end $$;
 
+-- ===================== REALTIME =====================
+-- Lets the website refresh immediately when the Android app syncs a row.
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'accounts','trades','journal_entries','notes','payouts','backtests'
+  ] loop
+    begin
+      execute format('alter publication supabase_realtime add table public.%I;', t);
+    exception
+      when duplicate_object then null;
+      when undefined_object then null;
+    end;
+  end loop;
+end $$;
+
 -- ===================== STORAGE (screenshots) =====================
 insert into storage.buckets (id, name, public)
 values ('screenshots', 'screenshots', true)

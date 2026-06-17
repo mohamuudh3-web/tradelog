@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import java.util.UUID
 
 data class SyncResult(val pulled: Int = 0, val pushed: Int = 0, val error: String? = null) {
     val ok: Boolean get() = error == null
@@ -32,6 +33,7 @@ class SyncEngine(
     private val payoutDao = db.payoutDao()
     private val journalDao = db.journalDao()
     private val noteDao = db.notebookDao()
+    private val instrumentDao = db.instrumentDao()
 
     @Volatile private var running = false
 
@@ -43,7 +45,10 @@ class SyncEngine(
         var pulled = 0
         var pushed = 0
         try {
+            ensureLegacyRowsPending()
+
             pulled += pullAccounts()
+            pulled += pullInstruments()
             pulled += pullTrades()
             pulled += pullBacktests()
             pulled += pullPayouts()
@@ -51,6 +56,7 @@ class SyncEngine(
             pulled += pullNotes()
 
             pushed += pushAccounts()
+            pushed += pushInstruments()
             pushed += pushTrades()
             pushed += pushBacktests()
             pushed += pushPayouts()
@@ -104,6 +110,38 @@ class SyncEngine(
     private fun finalLocalId(local: SyncMeta?, insertedId: Long): Long =
         if (local != null && local.localId != 0L) local.localId else insertedId
 
+    /**
+     * Older offline records can predate sync_meta. Give them cloud identities before the
+     * first push so existing phone accounts sync, and trades keep their account link.
+     */
+    private suspend fun ensureLegacyRowsPending() {
+        val now = System.currentTimeMillis()
+        ensurePendingMeta(SyncTables.ACCOUNTS, accountDao.getAll().map { it.id }, now)
+        ensurePendingMeta(SyncTables.TRADES, tradeDao.getAllAsc().map { it.id }, now)
+        ensurePendingMeta(SyncTables.BACKTESTS, backtestDao.getAll().map { it.id }, now)
+        ensurePendingMeta(SyncTables.PAYOUTS, payoutDao.getAll().map { it.id }, now)
+        ensurePendingMeta(SyncTables.JOURNAL, journalDao.getAll().map { it.id }, now)
+        ensurePendingMeta(SyncTables.NOTES, noteDao.getAll().map { it.id }, now)
+        ensurePendingMeta(SyncTables.INSTRUMENTS, instrumentDao.getAll().map { it.id }, now)
+    }
+
+    private suspend fun ensurePendingMeta(table: String, localIds: List<Long>, updatedAt: Long) {
+        localIds.filter { it > 0L }.forEach { localId ->
+            if (meta.byLocal(table, localId) == null) {
+                meta.insert(
+                    SyncMeta(
+                        tableName = table,
+                        localId = localId,
+                        uid = UUID.randomUUID().toString(),
+                        updatedAt = updatedAt,
+                        deleted = false,
+                        pending = true
+                    )
+                )
+            }
+        }
+    }
+
     // ---------------- PULL ----------------
 
     private suspend fun pullAccounts(): Int {
@@ -131,6 +169,7 @@ class SyncEngine(
     private suspend fun pullTrades(): Int {
         val text = client.getRows(SyncTables.TRADES, cursorQuery(SyncTables.TRADES))
         val rows = json.decodeFromString(ListSerializer(TradeDto.serializer()), text)
+        val fallbackAccountId = accountDao.getAll().firstOrNull()?.id
         var n = 0
         for (r in rows) {
             val local = meta.byUid(r.uid)
@@ -141,12 +180,37 @@ class SyncEngine(
                     markMetaDeleted(local, r.updatedAt)
                 }
             } else {
-                val accountId = r.accountUid?.let { meta.byUid(it)?.localId }
+                val accountId = r.accountUid?.let { meta.byUid(it)?.localId } ?: fallbackAccountId
                 val entity = r.toEntity(local?.localId ?: 0, accountId)
                 val id = if (entity.id == 0L) tradeDao.insert(entity) else { tradeDao.update(entity); entity.id }
                 upsertMeta(SyncTables.TRADES, r.uid, id, r.updatedAt)
             }
             advanceCursor(SyncTables.TRADES, r.updatedAt)
+            n++
+        }
+        return n
+    }
+
+    private suspend fun pullInstruments(): Int {
+        val text = client.getRows(SyncTables.INSTRUMENTS, cursorQuery(SyncTables.INSTRUMENTS))
+        val rows = json.decodeFromString(ListSerializer(InstrumentDto.serializer()), text)
+        var n = 0
+        for (r in rows) {
+            val local = meta.byUid(r.uid)
+            if (!shouldApply(local, r.updatedAt)) continue
+            if (r.deleted) {
+                if (local != null) {
+                    instrumentDao.getById(local.localId)?.let { instrumentDao.delete(it) }
+                    markMetaDeleted(local, r.updatedAt)
+                }
+            } else {
+                val targetId = local?.localId
+                    ?: instrumentDao.getByName(r.name)?.takeIf { meta.byLocal(SyncTables.INSTRUMENTS, it.id) == null }?.id
+                    ?: 0L
+                val id = instrumentDao.upsert(r.toEntity(targetId))
+                upsertMeta(SyncTables.INSTRUMENTS, r.uid, if (targetId != 0L) targetId else finalLocalId(local, id), r.updatedAt)
+            }
+            advanceCursor(SyncTables.INSTRUMENTS, r.updatedAt)
             n++
         }
         return n
@@ -286,12 +350,27 @@ class SyncEngine(
 
     private suspend fun pushTrades(): Int {
         var n = 0
+        val fallbackAccountId = accountDao.getAll().firstOrNull()?.id
         for (m in meta.pendingFor(SyncTables.TRADES)) {
             if (m.deleted) pushDeleted(SyncTables.TRADES, m)
             else {
                 val e = tradeDao.getById(m.localId) ?: continue
-                val accountUid = e.accountId?.let { meta.byLocal(SyncTables.ACCOUNTS, it)?.uid }
+                val accountId = e.accountId ?: fallbackAccountId
+                val accountUid = accountId?.let { meta.byLocal(SyncTables.ACCOUNTS, it)?.uid }
                 pushOne(SyncTables.TRADES, m, TradeDto.serializer(), e.toDto(m.uid, accountUid, httpOrNull(e.screenshotUri), m.updatedAt, false))
+            }
+            n++
+        }
+        return n
+    }
+
+    private suspend fun pushInstruments(): Int {
+        var n = 0
+        for (m in meta.pendingFor(SyncTables.INSTRUMENTS)) {
+            if (m.deleted) pushDeleted(SyncTables.INSTRUMENTS, m)
+            else {
+                val e = instrumentDao.getById(m.localId) ?: continue
+                pushOne(SyncTables.INSTRUMENTS, m, InstrumentDto.serializer(), e.toDto(m.uid, m.updatedAt, false))
             }
             n++
         }

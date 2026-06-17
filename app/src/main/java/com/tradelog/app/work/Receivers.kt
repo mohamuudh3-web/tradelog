@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.tradelog.app.di.ServiceLocator
+import com.tradelog.app.sync.SyncScheduler
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -53,6 +54,8 @@ class BootReceiver : BroadcastReceiver() {
             BriefingScheduler.reschedule(context, s.briefingEnabled, s.briefingHour, s.briefingMinute)
             NewsAlertScheduler.scheduleAll(context)
             ReminderScheduler.rescheduleAll(context)
+            SyncScheduler.schedulePeriodic(context)
+            SyncScheduler.enqueueNow(context)
         }
     }
 }

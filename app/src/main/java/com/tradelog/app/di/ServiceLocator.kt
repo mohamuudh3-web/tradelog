@@ -51,7 +51,7 @@ object ServiceLocator {
         manager ?: synchronized(this) {
             manager ?: run {
                 val app = context.applicationContext
-                SyncManager(appScope, syncEngine(app), syncStore(app)).also { mgr ->
+                SyncManager(app, appScope, syncEngine(app), syncStore(app)).also { mgr ->
                     // Any local save/delete triggers an automatic debounced sync.
                     repository(app).onSyncRequested = { mgr.request() }
                 }

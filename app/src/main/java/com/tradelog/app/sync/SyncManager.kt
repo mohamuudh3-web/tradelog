@@ -1,5 +1,6 @@
 package com.tradelog.app.sync
 
+import android.content.Context
 import com.tradelog.app.data.SyncStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
  * All calls are no-ops when signed out.
  */
 class SyncManager(
+    private val context: Context,
     private val scope: CoroutineScope,
     private val engine: SyncEngine,
     private val store: SyncStore
@@ -20,6 +22,7 @@ class SyncManager(
     @Volatile private var debounceJob: Job? = null
 
     fun request(debounceMs: Long = 2500L) {
+        SyncScheduler.enqueueNow(context, debounceMs)
         debounceJob?.cancel()
         debounceJob = scope.launch {
             delay(debounceMs)
@@ -30,10 +33,17 @@ class SyncManager(
     }
 
     fun syncNow() {
+        SyncScheduler.schedulePeriodic(context)
+        SyncScheduler.enqueueNow(context)
         scope.launch {
             runCatching {
                 if (store.current().isLoggedIn) engine.syncAll()
             }
         }
+    }
+
+    fun keepSynced() {
+        SyncScheduler.schedulePeriodic(context)
+        SyncScheduler.enqueueNow(context)
     }
 }

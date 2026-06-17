@@ -127,9 +127,13 @@ class TradeLogRepository(
     }
 
     /** Net realized P&L per account, computed from trades. */
-    suspend fun accountPnl(): Map<Long, Double> =
-        tradeDao.getAllAsc().filter { it.accountId != null }.groupBy { it.accountId!! }
-            .mapValues { (_, list) -> list.sumOf { it.pnl } }
+    suspend fun accountPnl(): Map<Long, Double> {
+        val fallbackAccountId = accountDao.getAll().firstOrNull()?.id
+        return tradeDao.getAllAsc().mapNotNull { trade ->
+            (trade.accountId ?: fallbackAccountId)?.let { it to trade.pnl }
+        }.groupBy({ it.first }, { it.second })
+            .mapValues { (_, list) -> list.sum() }
+    }
 
     // ---- Journal ----
     suspend fun getJournal(date: String): JournalEntry? = journalDao.getByDate(date)
@@ -239,11 +243,24 @@ class TradeLogRepository(
     suspend fun deletePreset(preset: PositionPreset) = presetDao.delete(preset)
 
     // ---- Instruments (saved pairs) ----
-    suspend fun saveInstrument(instrument: Instrument): Long = instrumentDao.upsert(instrument)
-    suspend fun addInstrument(name: String, pipValuePerLot: Double) {
-        if (name.isNotBlank()) instrumentDao.insert(Instrument(name = name.trim().uppercase(), pipValuePerLot = pipValuePerLot))
+    suspend fun saveInstrument(instrument: Instrument): Long {
+        val id = instrumentDao.upsert(instrument)
+        touchSync(SyncTables.INSTRUMENTS, if (instrument.id != 0L) instrument.id else id)
+        return id
     }
-    suspend fun deleteInstrument(instrument: Instrument) = instrumentDao.delete(instrument)
+
+    suspend fun addInstrument(name: String, pipValuePerLot: Double) {
+        if (name.isNotBlank()) {
+            val id = instrumentDao.insert(Instrument(name = name.trim().uppercase(), pipValuePerLot = pipValuePerLot))
+            touchSync(SyncTables.INSTRUMENTS, id)
+        }
+    }
+
+    suspend fun deleteInstrument(instrument: Instrument) {
+        tombstoneSync(SyncTables.INSTRUMENTS, instrument.id)
+        instrumentDao.delete(instrument)
+    }
+
     suspend fun instrumentCount(): Int = instrumentDao.count()
 
     // ---- Checklist rules ----

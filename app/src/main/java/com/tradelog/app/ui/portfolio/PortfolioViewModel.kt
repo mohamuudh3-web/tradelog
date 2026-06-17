@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -16,18 +17,24 @@ class PortfolioViewModel(private val repo: TradeLogRepository) : ViewModel() {
     val accounts: StateFlow<List<Account>> =
         repo.accounts.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _pnl = MutableStateFlow<Map<Long, Double>>(emptyMap())
-    val pnlByAccount: StateFlow<Map<Long, Double>> = _pnl.asStateFlow()
+    val pnlByAccount: StateFlow<Map<Long, Double>> =
+        repo.accounts
+            .combine(repo.trades) { accounts, trades ->
+                val fallbackAccountId = accounts.firstOrNull()?.id
+                trades
+                    .mapNotNull { trade ->
+                        val accountId = trade.accountId ?: fallbackAccountId
+                        accountId?.let { it to trade.pnl }
+                    }
+                    .groupBy({ it.first }, { it.second })
+                    .mapValues { (_, list) -> list.sum() }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    init {
-        viewModelScope.launch { refreshPnl() }
-    }
-
-    fun refreshPnl() = viewModelScope.launch { _pnl.value = repo.accountPnl() }
+    fun refreshPnl() = Unit
 
     fun delete(account: Account) = viewModelScope.launch {
         repo.deleteAccount(account)
-        refreshPnl()
     }
 }
 

@@ -76,6 +76,8 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
         if (id == 0L) return
         viewModelScope.launch {
             repo.getTrade(id)?.let { t ->
+                val slPips = t.slPips?.toCleanString() ?: ""
+                val tpPips = t.tpPips?.toCleanString() ?: ""
                 _form.value = TradeForm(
                     id = t.id,
                     accountId = t.accountId,
@@ -85,13 +87,13 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
                     exit = t.exitPrice?.toCleanString() ?: "",
                     lot = t.lotSize.toCleanString(),
                     riskPct = t.riskPercent?.toCleanString() ?: "",
-                    rMultiple = t.rMultiple?.toCleanString() ?: "",
+                    rMultiple = t.rMultiple?.let { kotlin.math.abs(it).toCleanString() } ?: calculateRiskReward(slPips, tpPips),
                     result = t.result,
                     pnl = t.pnl.toCleanString(),
                     setupTag = t.setupTag ?: "",
                     session = t.session,
-                    slPips = t.slPips?.toCleanString() ?: "",
-                    tpPips = t.tpPips?.toCleanString() ?: "",
+                    slPips = slPips,
+                    tpPips = tpPips,
                     psychology = t.psychology.toTagSet(),
                     checkedRules = t.checkedRules.toIdSet(),
                     imageUrls = t.imageUrls.toUrlList(),
@@ -105,6 +107,16 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
 
     fun update(transform: (TradeForm) -> TradeForm) = _form.update(transform)
 
+    fun updateSlPips(value: String) = _form.update { form ->
+        val next = form.copy(slPips = value)
+        next.copy(rMultiple = calculateRiskReward(next.slPips, next.tpPips))
+    }
+
+    fun updateTpPips(value: String) = _form.update { form ->
+        val next = form.copy(tpPips = value)
+        next.copy(rMultiple = calculateRiskReward(next.slPips, next.tpPips))
+    }
+
     val isValid: Boolean get() = _form.value.instrument.isNotBlank()
 
     fun save(onDone: () -> Unit) {
@@ -112,7 +124,8 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
         if (f.instrument.isBlank()) return
         // Normalize sign to the result: WIN = positive, LOSS = negative.
         val pnlMag = kotlin.math.abs(f.pnl.toDoubleOrNull() ?: 0.0)
-        val rMag = f.rMultiple.toDoubleOrNull()?.let { kotlin.math.abs(it) }
+        val rInput = f.rMultiple.ifBlank { calculateRiskReward(f.slPips, f.tpPips) }
+        val rMag = rInput.toDoubleOrNull()?.let { kotlin.math.abs(it) }
         val signedPnl = when (f.result) {
             TradeResult.WIN -> pnlMag
             TradeResult.LOSS -> -pnlMag
@@ -126,10 +139,11 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
             }
         }
         viewModelScope.launch {
+            val accountId = f.accountId ?: accounts.value.firstOrNull()?.id
             repo.saveTrade(
                 Trade(
                     id = f.id,
-                    accountId = f.accountId,
+                    accountId = accountId,
                     instrument = f.instrument.trim(),
                     direction = f.direction,
                     entryPrice = f.entry.toDoubleOrNull() ?: 0.0,
@@ -159,6 +173,14 @@ class TradeEditViewModel(private val repo: TradeLogRepository) : ViewModel() {
 
 private fun Double.toCleanString(): String =
     if (this == this.toLong().toDouble()) this.toLong().toString() else this.toString()
+
+private fun calculateRiskReward(slPips: String, tpPips: String): String {
+    val stop = kotlin.math.abs(slPips.toDoubleOrNull() ?: return "")
+    val target = kotlin.math.abs(tpPips.toDoubleOrNull() ?: return "")
+    if (stop == 0.0 || target == 0.0) return ""
+    val rounded = kotlin.math.round((target / stop) * 100.0) / 100.0
+    return rounded.toCleanString()
+}
 
 internal fun String.toTagSet(): Set<String> = split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
 internal fun String.toIdSet(): Set<Long> = split(",").mapNotNull { it.trim().toLongOrNull() }.toSet()

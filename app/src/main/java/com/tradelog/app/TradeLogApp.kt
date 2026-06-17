@@ -19,6 +19,7 @@ class TradeLogApp : Application() {
     override fun onCreate() {
         super.onCreate()
         NotificationHelper.ensureChannel(this)
+        ServiceLocator.syncManager(this).keepSynced()
 
         val repo = ServiceLocator.repository(this)
         val prefs = getSharedPreferences("tradelog_prefs", MODE_PRIVATE)

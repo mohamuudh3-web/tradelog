@@ -57,6 +57,9 @@ interface AccountDao {
     @Query("SELECT * FROM accounts ORDER BY createdAt ASC")
     fun observeAll(): Flow<List<Account>>
 
+    @Query("SELECT * FROM accounts ORDER BY createdAt ASC")
+    suspend fun getAll(): List<Account>
+
     @Query("SELECT * FROM accounts WHERE id = :id")
     suspend fun getById(id: Long): Account?
 
@@ -71,6 +74,9 @@ interface AccountDao {
 interface JournalDao {
     @Query("SELECT * FROM journal_entries ORDER BY date DESC")
     fun observeAll(): Flow<List<JournalEntry>>
+
+    @Query("SELECT * FROM journal_entries ORDER BY date DESC")
+    suspend fun getAll(): List<JournalEntry>
 
     @Query("SELECT * FROM journal_entries WHERE date = :date LIMIT 1")
     suspend fun getByDate(date: String): JournalEntry?
@@ -98,6 +104,9 @@ interface JournalDao {
 interface NotebookDao {
     @Query("SELECT * FROM notes ORDER BY updatedAt DESC")
     fun observeAll(): Flow<List<NotebookNote>>
+
+    @Query("SELECT * FROM notes ORDER BY updatedAt DESC")
+    suspend fun getAll(): List<NotebookNote>
 
     @Query("SELECT * FROM notes WHERE title LIKE '%' || :q || '%' OR body LIKE '%' || :q || '%' OR tags LIKE '%' || :q || '%' ORDER BY updatedAt DESC")
     fun search(q: String): Flow<List<NotebookNote>>
@@ -128,6 +137,9 @@ interface SetupTagDao {
 interface PayoutDao {
     @Query("SELECT * FROM payouts ORDER BY date DESC")
     fun observeAll(): Flow<List<PayoutRecord>>
+
+    @Query("SELECT * FROM payouts ORDER BY date DESC")
+    suspend fun getAll(): List<PayoutRecord>
 
     @Query("SELECT * FROM payouts WHERE id = :id")
     suspend fun getById(id: Long): PayoutRecord?
@@ -240,6 +252,15 @@ interface InstrumentDao {
     @Query("SELECT * FROM instruments ORDER BY sortOrder ASC, name ASC")
     fun observeAll(): Flow<List<Instrument>>
 
+    @Query("SELECT * FROM instruments ORDER BY sortOrder ASC, name ASC")
+    suspend fun getAll(): List<Instrument>
+
+    @Query("SELECT * FROM instruments WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): Instrument?
+
+    @Query("SELECT * FROM instruments WHERE name = :name LIMIT 1")
+    suspend fun getByName(name: String): Instrument?
+
     @Query("SELECT COUNT(*) FROM instruments")
     suspend fun count(): Int
 
@@ -257,6 +278,9 @@ interface InstrumentDao {
 interface BacktestDao {
     @Query("SELECT * FROM backtests ORDER BY dateMillis DESC, id DESC")
     fun observeAll(): Flow<List<Backtest>>
+
+    @Query("SELECT * FROM backtests ORDER BY dateMillis DESC, id DESC")
+    suspend fun getAll(): List<Backtest>
 
     @Query("SELECT * FROM backtests WHERE id = :id")
     suspend fun getById(id: Long): Backtest?

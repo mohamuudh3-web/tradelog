@@ -3,6 +3,7 @@ package com.tradelog.app.sync
 import com.tradelog.app.data.entity.Account
 import com.tradelog.app.data.entity.Backtest
 import com.tradelog.app.data.entity.Direction
+import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.JournalEntry
 import com.tradelog.app.data.entity.NotebookNote
 import com.tradelog.app.data.entity.PayoutRecord
@@ -228,6 +229,32 @@ fun NotebookNote.toDto(uid: String, updatedAt: Long, deleted: Boolean) = NoteDto
     uid = uid, title = title, body = body, tags = tags, updatedAt = updatedAt, deleted = deleted
 )
 
+@Serializable
+data class InstrumentDto(
+    val uid: String,
+    val name: String = "",
+    @SerialName("pip_value_per_lot") val pipValuePerLot: Double = 10.0,
+    @SerialName("sort_order") val sortOrder: Int = 0,
+    @SerialName("updated_at") val updatedAt: Long = 0,
+    val deleted: Boolean = false
+) {
+    fun toEntity(localId: Long) = Instrument(
+        id = localId,
+        name = name,
+        pipValuePerLot = pipValuePerLot,
+        sortOrder = sortOrder
+    )
+}
+
+fun Instrument.toDto(uid: String, updatedAt: Long, deleted: Boolean) = InstrumentDto(
+    uid = uid,
+    name = name,
+    pipValuePerLot = pipValuePerLot,
+    sortOrder = sortOrder,
+    updatedAt = updatedAt,
+    deleted = deleted
+)
+
 /** Table name constants shared by the engine and repository hooks. */
 object SyncTables {
     const val ACCOUNTS = "accounts"
@@ -236,4 +263,5 @@ object SyncTables {
     const val PAYOUTS = "payouts"
     const val JOURNAL = "journal_entries"
     const val NOTES = "notes"
+    const val INSTRUMENTS = "instruments"
 }

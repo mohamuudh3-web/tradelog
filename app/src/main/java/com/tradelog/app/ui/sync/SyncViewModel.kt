@@ -8,6 +8,7 @@ import com.tradelog.app.data.SyncStore
 import com.tradelog.app.di.ServiceLocator
 import com.tradelog.app.network.SupabaseClient
 import com.tradelog.app.sync.SyncEngine
+import com.tradelog.app.sync.SyncScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +46,8 @@ class SyncViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val result = if (isSignUp) client.signUp(email, password) else client.signIn(email, password)
             result.onSuccess {
+                SyncScheduler.schedulePeriodic(getApplication<Application>())
+                SyncScheduler.enqueueNow(getApplication<Application>())
                 _ui.value = _ui.value.copy(message = "Signed in. Syncing…")
                 runSync()
             }.onFailure {
@@ -55,6 +58,8 @@ class SyncViewModel(app: Application) : AndroidViewModel(app) {
 
     fun syncNow() {
         if (_ui.value.working) return
+        SyncScheduler.schedulePeriodic(getApplication<Application>())
+        SyncScheduler.enqueueNow(getApplication<Application>())
         _ui.value = _ui.value.copy(working = true, error = null, message = null)
         viewModelScope.launch { runSync() }
     }
@@ -70,6 +75,7 @@ class SyncViewModel(app: Application) : AndroidViewModel(app) {
 
     fun signOut() {
         viewModelScope.launch {
+            SyncScheduler.cancel(getApplication<Application>())
             store.clear()
             _ui.value = SyncUiState(message = "Signed out.")
         }

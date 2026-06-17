@@ -78,7 +78,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.ui.graphics.Color
 import java.io.File
 
-private val SCENARIOS = listOf("S1", "S2", "S3", "S4", "London", "New York", "Asia", "Other")
+private val SESSIONS = listOf("ASIA", "LONDON", "NEW YORK")
 
 @Composable
 private fun ChartSlot(label: String, accent: Color, url: String, onUrl: (String) -> Unit) {
@@ -102,6 +102,14 @@ private fun backtestResultColor(result: String): Color = when (result.uppercase(
     "WIN" -> Win
     "LOSS" -> Loss
     else -> Neutral
+}
+
+private fun backtestRiskReward(slPips: String, tpPips: String): String {
+    val stop = kotlin.math.abs(slPips.toDoubleOrNull() ?: return "")
+    val target = kotlin.math.abs(tpPips.toDoubleOrNull() ?: return "")
+    if (stop == 0.0 || target == 0.0) return ""
+    val rounded = kotlin.math.round((target / stop) * 100.0) / 100.0
+    return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
 }
 
 @Composable
@@ -220,7 +228,7 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
         ) {
             FormField(form.title, { v -> vm.update { it.copy(title = v) } }, "Title")
             DatePickerField("Date", form.dateMillis) { picked -> vm.update { it.copy(dateMillis = picked) } }
-            DropdownField("Scenario", SCENARIOS, form.session.ifBlank { null }, { it }, { s -> vm.update { it.copy(session = s) } })
+            DropdownField("Session", SESSIONS, form.session.ifBlank { null }, { it }, { s -> vm.update { it.copy(session = s) } })
 
             FormField(form.instrument, { v -> vm.update { it.copy(instrument = v) } }, "Symbol / pair")
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -266,7 +274,10 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
                 FormField(form.slPips, { v -> vm.update { it.copy(slPips = v) } }, "SL pips", Modifier.weight(1f), keyboardType = KeyboardType.Number)
                 FormField(form.tpPips, { v -> vm.update { it.copy(tpPips = v) } }, "TP pips", Modifier.weight(1f), keyboardType = KeyboardType.Number)
             }
-            FormField(form.bias, { v -> vm.update { it.copy(bias = v) } }, "Bias note (e.g. Bullish, A+ setup)")
+            backtestRiskReward(form.slPips, form.tpPips).takeIf { it.isNotBlank() }?.let { rr ->
+                Text("RR 1:$rr", style = MaterialTheme.typography.labelLarge, color = Teal)
+            }
+            FormField(form.bias, { v -> vm.update { it.copy(bias = v) } }, "Scenario note (e.g. S2 London sweep)")
 
             ConfirmationChecklist(
                 rules = rules,

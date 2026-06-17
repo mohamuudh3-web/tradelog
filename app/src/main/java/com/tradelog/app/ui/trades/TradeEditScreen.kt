@@ -85,9 +85,9 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
     var showAddPair by remember { mutableStateOf(false) }
 
     LaunchedEffect(tradeId) { vm.load(tradeId) }
-    // Auto-select the only account for a new trade; otherwise the user picks.
+    // Auto-select an account for a new trade so P&L always affects portfolio equity.
     LaunchedEffect(accounts, tradeId) {
-        if (tradeId == 0L && form.accountId == null && accounts.size == 1) {
+        if (tradeId == 0L && form.accountId == null && accounts.isNotEmpty()) {
             vm.update { it.copy(accountId = accounts.first().id) }
         }
     }
@@ -158,8 +158,8 @@ fun TradeEditScreen(tradeId: Long, onBack: () -> Unit) {
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FormField(form.riskPct, { v -> vm.update { it.copy(riskPct = v) } }, "Risk %", Modifier.weight(1f), keyboardType = KeyboardType.Number)
-                FormField(form.slPips, { v -> vm.update { it.copy(slPips = v) } }, "SL pips", Modifier.weight(1f), keyboardType = KeyboardType.Number)
-                FormField(form.tpPips, { v -> vm.update { it.copy(tpPips = v) } }, "TP pips", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+                FormField(form.slPips, vm::updateSlPips, "SL pips", Modifier.weight(1f), keyboardType = KeyboardType.Number)
+                FormField(form.tpPips, vm::updateTpPips, "TP pips", Modifier.weight(1f), keyboardType = KeyboardType.Number)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FormField(form.entry, { v -> vm.update { it.copy(entry = v) } }, "Entry", Modifier.weight(1f), keyboardType = KeyboardType.Number)
