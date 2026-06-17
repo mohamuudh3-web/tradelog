@@ -62,6 +62,7 @@ import com.tradelog.app.ui.common.ConfirmDeleteAction
 import com.tradelog.app.ui.common.ConfirmationChecklist
 import com.tradelog.app.ui.common.DatePickerField
 import com.tradelog.app.ui.common.DetailScaffold
+import com.tradelog.app.ui.common.CurrencyDropdown
 import com.tradelog.app.ui.common.DropdownField
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
@@ -167,7 +168,7 @@ fun BacktestGalleryScreen(onAdd: () -> Unit, onOpen: (Long) -> Unit, onStats: ()
                         Column(Modifier.padding(10.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(bt.instrument.ifBlank { bt.title }, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                                Text("#${bt.id}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("#${items.size - items.indexOf(item)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                             if (bt.direction.isNotBlank() || bt.session.isNotBlank()) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
@@ -229,6 +230,7 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
             FormField(form.title, { v -> vm.update { it.copy(title = v) } }, "Title")
             DatePickerField("Date", form.dateMillis) { picked -> vm.update { it.copy(dateMillis = picked) } }
             DropdownField("Session", SESSIONS, form.session.ifBlank { null }, { it }, { s -> vm.update { it.copy(session = s) } })
+            CurrencyDropdown(form.currency, { v -> vm.update { it.copy(currency = v) } }, label = "Currency (recorded only)")
 
             FormField(form.instrument, { v -> vm.update { it.copy(instrument = v) } }, "Symbol / pair")
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

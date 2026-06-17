@@ -45,6 +45,7 @@ data class BacktestForm(
     val direction: String = "",
     val result: String = "",
     val session: String = "",
+    val currency: String = "",
     val slPips: String = "",
     val tpPips: String = "",
     val bias: String = "",
@@ -92,7 +93,7 @@ class BacktestEditViewModel(private val repo: TradeLogRepository) : ViewModel() 
             repo.getBacktest(id)?.let { b ->
                 _form.value = BacktestForm(
                     title = b.title, instrument = b.instrument, direction = b.direction,
-                    result = b.result, session = b.session,
+                    result = b.result, session = b.session, currency = b.currency,
                     slPips = b.slPips?.toString()?.removeSuffix(".0") ?: "",
                     tpPips = b.tpPips?.toString()?.removeSuffix(".0") ?: "",
                     bias = b.bias,
@@ -119,6 +120,7 @@ class BacktestEditViewModel(private val repo: TradeLogRepository) : ViewModel() 
                 direction = f.direction,
                 result = f.result,
                 session = f.session.trim(),
+                currency = f.currency.trim(),
                 slPips = f.slPips.toDoubleOrNull(),
                 tpPips = f.tpPips.toDoubleOrNull(),
                 checkedRules = f.checkedRules.joinToString(",") { it.toString() },

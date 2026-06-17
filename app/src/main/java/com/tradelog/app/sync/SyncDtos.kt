@@ -118,6 +118,7 @@ data class BacktestDto(
     val direction: String = "",
     val result: String = "",
     val session: String = "",
+    val currency: String = "",
     @SerialName("sl_pips") val slPips: Double? = null,
     @SerialName("tp_pips") val tpPips: Double? = null,
     @SerialName("checked_rules") val checkedRules: String = "",
@@ -131,7 +132,7 @@ data class BacktestDto(
 ) {
     fun toEntity(localId: Long) = Backtest(
         id = localId, title = title, instrument = instrument, dateMillis = dateMillis, bias = bias,
-        direction = direction, result = result, session = session, slPips = slPips, tpPips = tpPips,
+        direction = direction, result = result, session = session, currency = currency, slPips = slPips, tpPips = tpPips,
         checkedRules = checkedRules, imageUrls = imageUrls, chart5Url = chart5Url, chart15Url = chart15Url,
         notes = notes, createdAt = createdAt
     )
@@ -139,7 +140,7 @@ data class BacktestDto(
 
 fun Backtest.toDto(uid: String, updatedAt: Long, deleted: Boolean) = BacktestDto(
     uid = uid, title = title, instrument = instrument, dateMillis = dateMillis, bias = bias,
-    direction = direction, result = result, session = session, slPips = slPips, tpPips = tpPips,
+    direction = direction, result = result, session = session, currency = currency, slPips = slPips, tpPips = tpPips,
     checkedRules = checkedRules, imageUrls = imageUrls, chart5Url = chart5Url, chart15Url = chart15Url,
     notes = notes, createdAt = createdAt, updatedAt = updatedAt, deleted = deleted
 )

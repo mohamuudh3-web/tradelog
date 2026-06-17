@@ -223,6 +223,8 @@ data class Backtest(
     @ColumnInfo(defaultValue = "") val result: String = "",
     /** Session / scenario tag, e.g. "S2", "London". */
     @ColumnInfo(defaultValue = "") val session: String = "",
+    /** Recorded only — which currency/pair was backtested. Does not affect any account. */
+    @ColumnInfo(defaultValue = "") val currency: String = "",
     val slPips: Double? = null,
     val tpPips: Double? = null,
     /** Comma-separated ids of confirmation rules that were checked. */

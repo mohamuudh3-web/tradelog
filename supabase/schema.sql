@@ -185,6 +185,7 @@ create table if not exists backtests (
   direction text not null default '',
   result text not null default '',
   session text not null default '',
+  currency text not null default '',
   sl_pips double precision,
   tp_pips double precision,
   checked_rules text not null default '',
