@@ -36,6 +36,7 @@ import com.tradelog.app.ui.portfolio.PortfolioScreen
 import com.tradelog.app.ui.settings.CurrenciesScreen
 import com.tradelog.app.ui.settings.SettingsScreen
 import com.tradelog.app.ui.sync.SyncScreen
+import com.tradelog.app.ui.tools.ImportTradesScreen
 import com.tradelog.app.ui.tools.InstrumentsScreen
 import com.tradelog.app.ui.tools.PositionCalcScreen
 import com.tradelog.app.ui.tools.ToolsScreen
@@ -206,6 +207,9 @@ fun AppRoot(openCalendar: Boolean, onCalendarConsumed: () -> Unit) {
             }
             composable(Routes.CURRENCIES) {
                 CurrenciesScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.IMPORT_TRADES) {
+                ImportTradesScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.INSTRUMENTS) {
                 InstrumentsScreen(onBack = { navController.popBackStack() })

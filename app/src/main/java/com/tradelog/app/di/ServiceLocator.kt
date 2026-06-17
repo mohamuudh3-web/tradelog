@@ -43,7 +43,7 @@ object ServiceLocator {
             sync ?: run {
                 val app = context.applicationContext
                 val db = AppDatabase.get(app)
-                SyncEngine(db, supabase(app), syncStore(app))
+                SyncEngine(app, db, supabase(app), syncStore(app))
             }.also { sync = it }
         }
 

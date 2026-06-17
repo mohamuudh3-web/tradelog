@@ -1,8 +1,11 @@
 package com.tradelog.app.sync
 
+import android.content.Context
+import android.net.Uri
 import com.tradelog.app.data.SyncStore
 import com.tradelog.app.data.db.AppDatabase
 import com.tradelog.app.data.entity.SyncMeta
+import com.tradelog.app.data.entity.Trade
 import com.tradelog.app.network.SupabaseClient
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -20,6 +23,7 @@ data class SyncResult(val pulled: Int = 0, val pushed: Int = 0, val error: Strin
  * Strategy: last-write-wins via `updated_at`, soft-delete via tombstones in [SyncMeta].
  */
 class SyncEngine(
+    private val context: Context,
     private val db: AppDatabase,
     private val client: SupabaseClient,
     private val store: SyncStore
@@ -335,6 +339,31 @@ class SyncEngine(
     private fun httpOrNull(uri: String?): String? =
         uri?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
 
+    /**
+     * Returns a cloud URL for the trade's screenshot so it shows on the website too.
+     * Already-remote URLs pass through; local content://file:// images are uploaded to
+     * Supabase Storage once, and the local row is rewritten to the public URL.
+     */
+    private suspend fun resolveScreenshotUrl(trade: Trade): String? {
+        val uri = trade.screenshotUri ?: return null
+        httpOrNull(uri)?.let { return it }
+        val userId = store.current().userId.ifBlank { return null }
+        val bytes = runCatching {
+            context.contentResolver.openInputStream(Uri.parse(uri))?.use { it.readBytes() }
+        }.getOrNull() ?: return null
+        val mime = runCatching { context.contentResolver.getType(Uri.parse(uri)) }.getOrNull() ?: "image/jpeg"
+        val ext = when {
+            mime.contains("png") -> "png"
+            mime.contains("webp") -> "webp"
+            else -> "jpg"
+        }
+        val path = "$userId/trade_${trade.id}_${System.currentTimeMillis()}.$ext"
+        val url = client.uploadScreenshot(path, bytes, mime) ?: return null
+        // Persist the public URL locally so we don't re-upload and the phone shows the same image.
+        tradeDao.update(trade.copy(screenshotUri = url))
+        return url
+    }
+
     private suspend fun pushAccounts(): Int {
         var n = 0
         for (m in meta.pendingFor(SyncTables.ACCOUNTS)) {
@@ -357,7 +386,7 @@ class SyncEngine(
                 val e = tradeDao.getById(m.localId) ?: continue
                 val accountId = e.accountId ?: fallbackAccountId
                 val accountUid = accountId?.let { meta.byLocal(SyncTables.ACCOUNTS, it)?.uid }
-                pushOne(SyncTables.TRADES, m, TradeDto.serializer(), e.toDto(m.uid, accountUid, httpOrNull(e.screenshotUri), m.updatedAt, false))
+                pushOne(SyncTables.TRADES, m, TradeDto.serializer(), e.toDto(m.uid, accountUid, resolveScreenshotUrl(e), m.updatedAt, false))
             }
             n++
         }

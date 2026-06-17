@@ -36,6 +36,7 @@ object Routes {
     const val COUNTDOWN = "countdown"
     const val SYNC = "sync"
     const val CURRENCIES = "currencies"
+    const val IMPORT_TRADES = "import_trades"
 
     fun tradeEdit(id: Long = 0L) = "$TRADE_EDIT?id=$id"
     fun tradeDetail(id: Long) = "$TRADE_DETAIL/$id"

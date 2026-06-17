@@ -115,6 +115,12 @@ class TradeLogRepository(
         tombstoneSync(SyncTables.TRADES, trade.id)
         tradeDao.delete(trade)
     }
+    /** Bulk-insert imported trades (e.g. from a broker CSV). Returns how many were added. */
+    suspend fun importTrades(trades: List<Trade>): Int {
+        var n = 0
+        for (t in trades) { saveTrade(t); n++ }
+        return n
+    }
 
     // ---- Accounts ----
     suspend fun getAccount(id: Long): Account? = accountDao.getById(id)
