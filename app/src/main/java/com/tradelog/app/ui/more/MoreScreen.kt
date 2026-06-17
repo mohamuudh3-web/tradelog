@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.CandlestickChart
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +41,7 @@ fun MoreScreen(onNavigate: (String) -> Unit) {
         MoreItem("Notebook", Routes.NOTEBOOK, Icons.AutoMirrored.Filled.MenuBook),
         MoreItem("Payouts", Routes.PAYOUTS, Icons.Filled.Payments),
         MoreItem("Trading tools", Routes.TOOLS, Icons.Filled.Build),
+        MoreItem("Currencies", Routes.CURRENCIES, Icons.Filled.AttachMoney),
         MoreItem("Cloud sync (website)", Routes.SYNC, Icons.Filled.CloudSync),
         MoreItem("Settings", Routes.SETTINGS, Icons.Filled.Settings)
     )

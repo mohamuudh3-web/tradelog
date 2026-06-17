@@ -23,6 +23,7 @@ import com.tradelog.app.ui.payouts.PayoutEditViewModel
 import com.tradelog.app.ui.payouts.PayoutViewModel
 import com.tradelog.app.ui.portfolio.AccountEditViewModel
 import com.tradelog.app.ui.portfolio.PortfolioViewModel
+import com.tradelog.app.ui.settings.CurrencyViewModel
 import com.tradelog.app.ui.settings.SettingsViewModel
 import com.tradelog.app.ui.tools.InstrumentViewModel
 import com.tradelog.app.ui.tools.PositionCalcViewModel
@@ -49,6 +50,7 @@ class AppViewModelFactory(private val repo: TradeLogRepository) : ViewModelProvi
             modelClass.isAssignableFrom(PositionCalcViewModel::class.java) -> PositionCalcViewModel(repo)
             modelClass.isAssignableFrom(CalendarViewModel::class.java) -> CalendarViewModel(repo)
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> SettingsViewModel(repo)
+            modelClass.isAssignableFrom(CurrencyViewModel::class.java) -> CurrencyViewModel(repo)
             modelClass.isAssignableFrom(InstrumentViewModel::class.java) -> InstrumentViewModel(repo)
             modelClass.isAssignableFrom(BacktestListViewModel::class.java) -> BacktestListViewModel(repo)
             modelClass.isAssignableFrom(BacktestEditViewModel::class.java) -> BacktestEditViewModel(repo)

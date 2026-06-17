@@ -35,6 +35,7 @@ object Routes {
     const val BACKTEST_STATS = "backtest_stats"
     const val COUNTDOWN = "countdown"
     const val SYNC = "sync"
+    const val CURRENCIES = "currencies"
 
     fun tradeEdit(id: Long = 0L) = "$TRADE_EDIT?id=$id"
     fun tradeDetail(id: Long) = "$TRADE_DETAIL/$id"

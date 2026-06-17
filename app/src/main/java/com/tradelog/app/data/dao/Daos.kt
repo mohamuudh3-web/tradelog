@@ -12,6 +12,7 @@ import com.tradelog.app.data.entity.Backtest
 import com.tradelog.app.data.entity.BacktestImage
 import com.tradelog.app.data.entity.ChecklistRule
 import com.tradelog.app.data.entity.Countdown
+import com.tradelog.app.data.entity.Currency
 import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.Goal
@@ -245,6 +246,21 @@ interface ChecklistRuleDao {
 
     @Delete
     suspend fun delete(rule: ChecklistRule)
+}
+
+@Dao
+interface CurrencyDao {
+    @Query("SELECT * FROM currencies ORDER BY sortOrder ASC, code ASC")
+    fun observeAll(): Flow<List<Currency>>
+
+    @Query("SELECT COUNT(*) FROM currencies")
+    suspend fun count(): Int
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(currency: Currency): Long
+
+    @Delete
+    suspend fun delete(currency: Currency)
 }
 
 @Dao

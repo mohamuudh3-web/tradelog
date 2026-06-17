@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tradelog.app.data.entity.PayoutStatus
 import com.tradelog.app.di.appViewModel
 import com.tradelog.app.ui.common.ConfirmDeleteAction
+import com.tradelog.app.ui.common.CurrencyDropdown
 import com.tradelog.app.ui.common.DetailScaffold
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
@@ -128,7 +129,7 @@ fun PayoutEditScreen(payoutId: Long, onBack: () -> Unit) {
             FormField(payout.date, { v -> vm.update { it.copy(date = v) } }, "Date (yyyy-MM-dd)")
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FormField(if (payout.amount == 0.0) "" else payout.amount.toString(), { v -> vm.update { it.copy(amount = v.toDoubleOrNull() ?: 0.0) } }, "Amount", Modifier.weight(1f), keyboardType = KeyboardType.Number)
-                FormField(payout.currency, { v -> vm.update { it.copy(currency = v.uppercase()) } }, "Currency", Modifier.weight(1f))
+                CurrencyDropdown(payout.currency, { v -> vm.update { it.copy(currency = v) } }, Modifier.weight(1f))
             }
             Text("Status")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tradelog.app.di.appViewModel
 import com.tradelog.app.ui.common.ConfirmDeleteAction
+import com.tradelog.app.ui.common.CurrencyDropdown
 import com.tradelog.app.ui.common.DetailScaffold
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
@@ -111,7 +112,7 @@ fun AccountEditScreen(accountId: Long, onBack: () -> Unit) {
             FormField(account.broker, { v -> vm.update { it.copy(broker = v) } }, "Broker / prop firm")
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FormField(if (account.balance == 0.0) "" else account.balance.toString(), { v -> vm.update { it.copy(balance = v.toDoubleOrNull() ?: 0.0) } }, "Balance", Modifier.weight(1f), keyboardType = KeyboardType.Number)
-                FormField(account.currency, { v -> vm.update { it.copy(currency = v.uppercase()) } }, "Currency", Modifier.weight(1f))
+                CurrencyDropdown(account.currency, { v -> vm.update { it.copy(currency = v) } }, Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Prop firm account")

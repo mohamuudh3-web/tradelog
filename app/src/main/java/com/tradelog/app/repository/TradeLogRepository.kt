@@ -7,6 +7,7 @@ import com.tradelog.app.data.entity.Backtest
 import com.tradelog.app.data.entity.BacktestImage
 import com.tradelog.app.data.entity.ChecklistRule
 import com.tradelog.app.data.entity.Countdown
+import com.tradelog.app.data.entity.Currency
 import com.tradelog.app.data.entity.EconomicEvent
 import com.tradelog.app.data.entity.Instrument
 import com.tradelog.app.data.entity.Goal
@@ -50,6 +51,7 @@ class TradeLogRepository(
     private val backtestDao = db.backtestDao()
     private val checklistRuleDao = db.checklistRuleDao()
     private val countdownDao = db.countdownDao()
+    private val currencyDao = db.currencyDao()
     private val syncMetaDao = db.syncMetaDao()
 
     /** Wired by ServiceLocator to kick off an automatic (debounced) sync after any local change. */
@@ -94,6 +96,7 @@ class TradeLogRepository(
     val tasks: Flow<List<TaskItem>> = taskDao.observeAll()
     val presets: Flow<List<PositionPreset>> = presetDao.observeAll()
     val instruments: Flow<List<Instrument>> = instrumentDao.observeAll()
+    val currencies: Flow<List<Currency>> = currencyDao.observeAll()
     val checklistRules: Flow<List<ChecklistRule>> = checklistRuleDao.observeAll()
     val countdowns: Flow<List<Countdown>> = countdownDao.observeAll()
     val backtests: Flow<List<Backtest>> = backtestDao.observeAll()
@@ -262,6 +265,21 @@ class TradeLogRepository(
     }
 
     suspend fun instrumentCount(): Int = instrumentDao.count()
+
+    // ---- Currencies (user-managed list shown in every currency dropdown) ----
+    suspend fun addCurrency(code: String) {
+        val c = code.trim().uppercase()
+        if (c.isNotBlank()) currencyDao.insert(Currency(code = c))
+    }
+    suspend fun deleteCurrency(currency: Currency) = currencyDao.delete(currency)
+    suspend fun currencyCount(): Int = currencyDao.count()
+    suspend fun ensureCurrenciesSeeded() {
+        if (currencyDao.count() == 0) {
+            listOf("USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD").forEachIndexed { i, code ->
+                currencyDao.insert(Currency(code = code, sortOrder = i))
+            }
+        }
+    }
 
     // ---- Checklist rules ----
     suspend fun addChecklistRule(text: String) {

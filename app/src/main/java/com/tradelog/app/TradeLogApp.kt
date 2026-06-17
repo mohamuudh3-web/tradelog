@@ -45,6 +45,7 @@ class TradeLogApp : Application() {
                     prefs.edit().putBoolean("seeded_v4", true).apply()
                 }
             }
+            repo.ensureCurrenciesSeeded()
             val settings = repo.settings.settings.first()
             BriefingScheduler.reschedule(
                 this@TradeLogApp,

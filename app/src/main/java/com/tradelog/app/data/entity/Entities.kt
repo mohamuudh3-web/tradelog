@@ -192,6 +192,14 @@ data class ChecklistRule(
     val sortOrder: Int = 0
 )
 
+@Entity(tableName = "currencies", indices = [Index(value = ["code"], unique = true)])
+data class Currency(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** ISO-style code, e.g. USD, EUR, GBP. Uppercase. */
+    val code: String,
+    val sortOrder: Int = 0
+)
+
 @Entity(tableName = "instruments", indices = [Index(value = ["name"], unique = true)])
 data class Instrument(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

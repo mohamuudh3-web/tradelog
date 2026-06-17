@@ -33,6 +33,7 @@ import com.tradelog.app.ui.payouts.PayoutEditScreen
 import com.tradelog.app.ui.payouts.PayoutsScreen
 import com.tradelog.app.ui.portfolio.AccountEditScreen
 import com.tradelog.app.ui.portfolio.PortfolioScreen
+import com.tradelog.app.ui.settings.CurrenciesScreen
 import com.tradelog.app.ui.settings.SettingsScreen
 import com.tradelog.app.ui.sync.SyncScreen
 import com.tradelog.app.ui.tools.InstrumentsScreen
@@ -202,6 +203,9 @@ fun AppRoot(openCalendar: Boolean, onCalendarConsumed: () -> Unit) {
             }
             composable(Routes.SYNC) {
                 SyncScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.CURRENCIES) {
+                CurrenciesScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.INSTRUMENTS) {
                 InstrumentsScreen(onBack = { navController.popBackStack() })
