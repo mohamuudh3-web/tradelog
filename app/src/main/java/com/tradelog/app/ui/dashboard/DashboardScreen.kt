@@ -1,7 +1,9 @@
 package com.tradelog.app.ui.dashboard
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +35,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,6 +81,8 @@ fun DashboardScreen(
         "Position calculator" to Routes.POSITION_CALC,
         "Economic calendar" to Routes.CALENDAR,
         "Pairs / instruments" to Routes.INSTRUMENTS,
+        "Currencies" to Routes.CURRENCIES,
+        "Risk settings" to Routes.RISK_SETTINGS,
         "Settings" to Routes.SETTINGS
     )
 
@@ -123,8 +129,23 @@ fun DashboardScreen(
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     StatTile("Win rate", Format.percent(state.winRate), Modifier.weight(1f))
+                    StatTile("Win streak", "${state.streak}🔥", Modifier.weight(1f))
                     StatTile("Trades", state.totalTrades.toString(), Modifier.weight(1f))
-                    StatTile("Goals", state.openGoals.toString(), Modifier.weight(1f))
+                }
+            }
+
+            if (state.risk.isNotEmpty()) {
+                item {
+                    SectionCard(modifier = Modifier.clickable { onNavigate(Routes.RISK_SETTINGS) }) {
+                        Text("Risk guardrails", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Room left before a breach · tap to edit your risk plan",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp, bottom = 6.dp)
+                        )
+                        state.risk.take(3).forEach { r -> RiskRow(r) }
+                    }
                 }
             }
 
@@ -216,6 +237,55 @@ fun DashboardScreen(
             }
 
             item { Spacer(Modifier.height(72.dp)) }
+        }
+    }
+}
+
+private fun riskColor(ratio: Double): Color = when {
+    ratio >= 1.0 -> Loss
+    ratio >= 0.8 -> Color(0xFFE0902A)
+    else -> Win
+}
+
+@Composable
+private fun RiskRow(r: RiskStatusUi) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(r.accountName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            val leftToday = (r.dailyLimit - r.dailyUsed).coerceAtLeast(0.0)
+            Text(
+                "${Format.money(leftToday, r.currency)} left today",
+                style = MaterialTheme.typography.labelMedium,
+                color = riskColor(r.dailyRatio)
+            )
+        }
+        RiskBar("Daily loss", r.dailyUsed, r.dailyLimit, r.dailyRatio, r.currency)
+        RiskBar("Drawdown", r.drawdownUsed, r.drawdownLimit, r.drawdownRatio, r.currency)
+    }
+}
+
+@Composable
+private fun RiskBar(label: String, used: Double, limit: Double, ratio: Double, currency: String) {
+    Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "${Format.money(used, currency)} / ${Format.money(limit, currency)}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Box(
+            Modifier.fillMaxWidth().height(8.dp).padding(top = 3.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Box(
+                Modifier.fillMaxWidth(ratio.coerceIn(0.0, 1.0).toFloat())
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(riskColor(ratio))
+            )
         }
     }
 }

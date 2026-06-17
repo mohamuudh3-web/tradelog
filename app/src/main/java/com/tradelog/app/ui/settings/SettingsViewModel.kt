@@ -40,6 +40,12 @@ class SettingsViewModel(private val repo: TradeLogRepository) : ViewModel() {
         viewModelScope.launch { repo.settings.setDefaultCurrency(currency) }
     }
 
+    fun setRisk(perTrade: Double, perDay: Double, perGroup: Double, maxDailyLoss: Double, maxDrawdown: Double) {
+        viewModelScope.launch {
+            repo.settings.setRisk(perTrade, perDay, perGroup, maxDailyLoss, maxDrawdown)
+        }
+    }
+
     fun setNewsAlert(context: Context, enabled: Boolean, minutes: Int) {
         viewModelScope.launch {
             repo.settings.setNewsAlert(enabled, minutes.coerceAtLeast(1))

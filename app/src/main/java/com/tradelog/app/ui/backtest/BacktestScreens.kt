@@ -227,7 +227,6 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
             Modifier.padding(inner).padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            FormField(form.title, { v -> vm.update { it.copy(title = v) } }, "Title")
             DatePickerField("Date", form.dateMillis) { picked -> vm.update { it.copy(dateMillis = picked) } }
             DropdownField("Session", SESSIONS, form.session.ifBlank { null }, { it }, { s -> vm.update { it.copy(session = s) } })
             CurrencyDropdown(form.currency, { v -> vm.update { it.copy(currency = v) } }, label = "Currency (recorded only)")

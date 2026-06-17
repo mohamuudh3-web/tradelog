@@ -34,6 +34,7 @@ import com.tradelog.app.ui.payouts.PayoutsScreen
 import com.tradelog.app.ui.portfolio.AccountEditScreen
 import com.tradelog.app.ui.portfolio.PortfolioScreen
 import com.tradelog.app.ui.settings.CurrenciesScreen
+import com.tradelog.app.ui.settings.RiskSettingsScreen
 import com.tradelog.app.ui.settings.SettingsScreen
 import com.tradelog.app.ui.sync.SyncScreen
 import com.tradelog.app.ui.tools.ImportTradesScreen
@@ -207,6 +208,9 @@ fun AppRoot(openCalendar: Boolean, onCalendarConsumed: () -> Unit) {
             }
             composable(Routes.CURRENCIES) {
                 CurrenciesScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.RISK_SETTINGS) {
+                RiskSettingsScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.IMPORT_TRADES) {
                 ImportTradesScreen(onBack = { navController.popBackStack() })
