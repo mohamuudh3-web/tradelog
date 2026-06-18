@@ -28,23 +28,28 @@ private val DarkColors = darkColorScheme(
 )
 
 private val LightColors = lightColorScheme(
-    primary = TealDark,
+    primary = Blue,
     onPrimary = Color.White,
-    secondary = Teal,
+    primaryContainer = BlueSoft,
+    onPrimaryContainer = BlueDark,
+    secondary = Blue,
+    onSecondary = Color.White,
     tertiary = Amber,
-    error = Red,
+    error = Loss,
     background = LightBg,
     onBackground = LightOnSurface,
     surface = LightSurface,
     onSurface = LightOnSurface,
     surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = Color(0xFF45525E),
-    outline = Color(0xFFC2CCD6)
+    onSurfaceVariant = Color(0xFF6B7280),
+    outline = Color(0xFFE6EAF0),
+    outlineVariant = Color(0xFFEDEFF3)
 )
 
 @Composable
 fun TradeLogTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    // Locked to light to match the reference design (ignores the system dark setting).
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colors = if (darkTheme) DarkColors else LightColors
