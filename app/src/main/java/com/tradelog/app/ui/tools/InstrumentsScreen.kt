@@ -57,7 +57,7 @@ fun InstrumentsScreen(onBack: () -> Unit) {
     var showAdd by remember { mutableStateOf(false) }
 
     DetailScaffold(
-        title = "Pairs / instruments",
+        title = "Symbols / pairs",
         onBack = onBack,
         floatingActionButton = { FloatingActionButton(onClick = { showAdd = true }) { Icon(Icons.Filled.Add, "Add pair") } }
     ) { inner ->

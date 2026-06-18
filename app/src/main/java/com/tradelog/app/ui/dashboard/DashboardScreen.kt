@@ -80,8 +80,7 @@ fun DashboardScreen(
         "Payouts" to Routes.PAYOUTS,
         "Position calculator" to Routes.POSITION_CALC,
         "Economic calendar" to Routes.CALENDAR,
-        "Pairs / instruments" to Routes.INSTRUMENTS,
-        "Currencies" to Routes.CURRENCIES,
+        "Symbols / pairs" to Routes.INSTRUMENTS,
         "Risk settings" to Routes.RISK_SETTINGS,
         "Settings" to Routes.SETTINGS
     )

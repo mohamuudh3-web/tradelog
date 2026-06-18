@@ -43,7 +43,7 @@ fun MoreScreen(onNavigate: (String) -> Unit) {
         MoreItem("Notebook", Routes.NOTEBOOK, Icons.AutoMirrored.Filled.MenuBook),
         MoreItem("Payouts", Routes.PAYOUTS, Icons.Filled.Payments),
         MoreItem("Trading tools", Routes.TOOLS, Icons.Filled.Build),
-        MoreItem("Currencies", Routes.CURRENCIES, Icons.Filled.AttachMoney),
+        MoreItem("Symbols / pairs", Routes.INSTRUMENTS, Icons.Filled.AttachMoney),
         MoreItem("Risk settings", Routes.RISK_SETTINGS, Icons.Filled.Shield),
         MoreItem("Import trades (CSV)", Routes.IMPORT_TRADES, Icons.Filled.Upload),
         MoreItem("Cloud sync (website)", Routes.SYNC, Icons.Filled.CloudSync),

@@ -62,7 +62,6 @@ import com.tradelog.app.ui.common.ConfirmDeleteAction
 import com.tradelog.app.ui.common.ConfirmationChecklist
 import com.tradelog.app.ui.common.DatePickerField
 import com.tradelog.app.ui.common.DetailScaffold
-import com.tradelog.app.ui.common.CurrencyDropdown
 import com.tradelog.app.ui.common.DropdownField
 import com.tradelog.app.ui.common.EmptyState
 import com.tradelog.app.ui.common.FormField
@@ -229,7 +228,6 @@ fun BacktestEditScreen(backtestId: Long, onBack: () -> Unit) {
         ) {
             DatePickerField("Date", form.dateMillis) { picked -> vm.update { it.copy(dateMillis = picked) } }
             DropdownField("Session", SESSIONS, form.session.ifBlank { null }, { it }, { s -> vm.update { it.copy(session = s) } })
-            CurrencyDropdown(form.currency, { v -> vm.update { it.copy(currency = v) } }, label = "Currency (recorded only)")
 
             FormField(form.instrument, { v -> vm.update { it.copy(instrument = v) } }, "Symbol / pair")
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
