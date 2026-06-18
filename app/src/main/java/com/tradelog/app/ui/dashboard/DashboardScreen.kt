@@ -16,6 +16,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -36,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -111,6 +114,7 @@ fun DashboardScreen(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item { PortfolioHero(state) }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     StatTile(
@@ -236,6 +240,48 @@ fun DashboardScreen(
             }
 
             item { Spacer(Modifier.height(72.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun PortfolioHero(state: DashboardState) {
+    val positive = state.netPnl >= 0
+    val pct = if (state.investedBase > 0) state.netPnl / state.investedBase * 100.0 else 0.0
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFF2D6BFF), Color(0xFF1B4DD8))))
+            .padding(22.dp)
+    ) {
+        Column {
+            Text(
+                "PORTFOLIO VALUE",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.75f)
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                Format.money(state.portfolioValue, state.currency),
+                style = MaterialTheme.typography.headlineLarge,
+                color = Color.White
+            )
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    if (positive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.size(6.dp))
+                Text(
+                    "${Format.signedMoney(state.netPnl)} · ${String.format("%+.2f%%", pct)}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.White
+                )
+            }
         }
     }
 }

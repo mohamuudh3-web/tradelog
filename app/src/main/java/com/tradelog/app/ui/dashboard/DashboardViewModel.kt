@@ -30,6 +30,10 @@ data class DashboardState(
     val totalTrades: Int = 0,
     val openGoals: Int = 0,
     val streak: Int = 0,
+    // Hero: total equity across accounts and the base it grew from.
+    val portfolioValue: Double = 0.0,
+    val investedBase: Double = 0.0,
+    val currency: String = "USD",
     val goals: List<GoalProgressUi> = emptyList(),
     val tasks: List<TaskUi> = emptyList(),
     val recentTrades: List<Trade> = emptyList(),
@@ -85,13 +89,20 @@ class DashboardViewModel(private val repo: TradeLogRepository) : ViewModel() {
             )
         }.sortedByDescending { it.worstRatio }
 
+        val netPnl = trades.sumOf { it.pnl }
+        // Equity matches the Portfolio screen: base balance per account + its realized P&L.
+        val investedBase = accounts.sumOf { it.balance }
+
         DashboardState(
-            netPnl = trades.sumOf { it.pnl },
+            netPnl = netPnl,
             todayPnl = todayPnl,
             winRate = if (decisive > 0) wins.toDouble() / decisive else 0.0,
             totalTrades = trades.size,
             openGoals = goals.size,
             streak = streak,
+            portfolioValue = investedBase + netPnl,
+            investedBase = investedBase,
+            currency = accounts.firstOrNull()?.currency ?: "USD",
             goals = goals.take(4).map { GoalProgressUi(it, repo.goalProgress(it)) },
             tasks = tasks.filter { it.category == TaskCategory.TASK }.map { TaskUi(it, repo.isTaskDoneToday(it)) },
             recentTrades = trades.take(5),
