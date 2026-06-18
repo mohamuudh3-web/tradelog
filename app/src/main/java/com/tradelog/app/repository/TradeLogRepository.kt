@@ -126,7 +126,9 @@ class TradeLogRepository(
     suspend fun getAccount(id: Long): Account? = accountDao.getById(id)
     suspend fun saveAccount(account: Account): Long {
         val stamped = if (account.createdAt == 0L) account.copy(createdAt = System.currentTimeMillis()) else account
-        val id = accountDao.upsert(stamped)
+        val newId = accountDao.upsert(stamped)
+        // @Upsert returns -1 on the update path; fall back to the entity's own id so edits still mark sync-pending.
+        val id = if (stamped.id != 0L) stamped.id else newId
         touchSync(SyncTables.ACCOUNTS, id)
         return id
     }
@@ -163,7 +165,9 @@ class TradeLogRepository(
         if (q.isBlank()) notebookDao.observeAll() else notebookDao.search(q.trim())
     suspend fun getNote(id: Long): NotebookNote? = notebookDao.getById(id)
     suspend fun saveNote(note: NotebookNote): Long {
-        val id = notebookDao.upsert(note.copy(updatedAt = System.currentTimeMillis()))
+        val stamped = note.copy(updatedAt = System.currentTimeMillis())
+        val newId = notebookDao.upsert(stamped)
+        val id = if (stamped.id != 0L) stamped.id else newId
         touchSync(SyncTables.NOTES, id)
         return id
     }
@@ -180,7 +184,8 @@ class TradeLogRepository(
     suspend fun getPayout(id: Long): PayoutRecord? = payoutDao.getById(id)
     suspend fun savePayout(payout: PayoutRecord): Long {
         val stamped = if (payout.createdAt == 0L) payout.copy(createdAt = System.currentTimeMillis()) else payout
-        val id = payoutDao.upsert(stamped)
+        val newId = payoutDao.upsert(stamped)
+        val id = if (stamped.id != 0L) stamped.id else newId
         touchSync(SyncTables.PAYOUTS, id)
         return id
     }
@@ -314,7 +319,8 @@ class TradeLogRepository(
     fun observeBacktestImages(id: Long): Flow<List<BacktestImage>> = backtestDao.observeImages(id)
     suspend fun saveBacktest(backtest: Backtest): Long {
         val stamped = if (backtest.createdAt == 0L) backtest.copy(createdAt = System.currentTimeMillis()) else backtest
-        val id = backtestDao.upsert(stamped)
+        val newId = backtestDao.upsert(stamped)
+        val id = if (stamped.id != 0L) stamped.id else newId
         touchSync(SyncTables.BACKTESTS, id)
         return id
     }
